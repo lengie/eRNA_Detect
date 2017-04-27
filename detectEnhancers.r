@@ -10,11 +10,14 @@
 ### Input: string chromosome number, 
 ### Output:
 
-ranges <- removeExons(chromosome,input_start,input_end,strand,txdb){
+ranges <- removeExons(chromosome,input_start,input_end,strand,txbe){
+	interval <- IRanges(input_start,input_end)
+	subsetByOverlaps(txbe,interval) #then hopefully this is the opposite of what I want?
+	
 	start <- c()
 	end <- c()
 	
-
+	ranges <- IRanges(start,end)
 }
 
 removeZeroCounts(chromosome, ranges, strand="+", sense_counts){
