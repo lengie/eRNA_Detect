@@ -10,12 +10,29 @@
 ### Input: string chromosome number, 
 ### Output:
 
-ranges <- removeExons(chromosome,input_start,input_end,strand,txbe){
+ranges <- findReadRegions(chromosome,input_start,input_end,strand,bed){
 	interval <- IRanges(input_start,input_end)
-	subsetByOverlaps(txbe,interval) #then hopefully this is the opposite of what I want?
+	
+	#search the bed file for a region that includes the input_start, if any
+	if(bed$chr[i]==chromosome && bed$strand[i]=strand && bed$start[i] <= input_start <= bed$end[i]){ #just the idea of it so far  
+		start <- bed$start[i]
+		end <- bed$end[i]
+	}else{
+		end <- input_start 
+	}
+	
+	while(end < input_end){
+	
+	
+	
+		#Look for the bed file line that includes start, if any
+		#Look for next start, and where it ends
+		#If end < input.end, then keep going #but have to change end if there aren't any reads in the region
+		
 	
 	start <- c()
 	end <- c()
+	}
 	
 	ranges <- IRanges(start,end)
 }
