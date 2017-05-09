@@ -17,11 +17,15 @@ ranges <- findReadRegions(chromosome,input_start,input_end,strand,bed){
 	if(bed$chr[i]==chromosome && bed$strand[i]=strand && bed$start[i] <= input_start <= bed$end[i]){ #just the idea of it so far  
 		start <- bed$start[i]
 		end <- bed$end[i]
+		j <- end
 	}else{
-		end <- input_start 
+		start <- c()
+		end <- c()
+		j <- input_start
 	}
 	
-	while(end < input_end){
+	
+	while(j < input_end){
 	
 	
 	
@@ -30,8 +34,9 @@ ranges <- findReadRegions(chromosome,input_start,input_end,strand,bed){
 		#If end < input.end, then keep going #but have to change end if there aren't any reads in the region
 		
 	
-	start <- c()
-	end <- c()
+		start <- c(start, )
+		end <- c(end, )
+		j <- 
 	}
 	
 	ranges <- IRanges(start,end)
