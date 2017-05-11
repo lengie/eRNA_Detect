@@ -36,19 +36,21 @@ clusters <- findReadRegions(chromosome,input_start,input_end,strand,bed){
 	#Report TPM, keep if it's over 2
 }
 
-TPM <- TPMCalc(clusters, reads){
-	counts <- summarizeOverlaps(features=clusters,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-	sense_counts <- assay(counts)
-	#just read strand from GRanges obj
-	opp_strand <- clusters
-	#want to change the run value but not run length of the strand
-	anti <- strand(clusters)
-	for(i=1:length(runValue(strand(clusters)))){
+range <- reverseStrand(range){
+	anti <- strand(range)
+	for(i=1:length(runValue(anti))){
 		if(runValues(anti)[i]=="-"){
 			runValues(anti)[i] <- "+"
 		}else if (runValues(anti)[i]=="+"){runValues(anti)[i] <- "-"} #don't want to mess with the *
 	}
-	strand(clusters) <- anti
+	strand(range) <- anti
+}
+
+TPM <- TPMCalc(clusters, reads){
+	counts <- summarizeOverlaps(features=clusters,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	sense_counts <- assay(counts)
+	#just read strand from GRanges obj
+	opp_strand <- reverseStrand(clusters)
 	
 	counts <- summarizeOverlaps(features=opp_strand,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	anti_counts <- assay(counts)
@@ -64,12 +66,6 @@ TPM <- TPMCalc(clusters, reads){
 	TPM <- rpk/scaling 
 }
 
-TPM <- dataSet2Check(clusters,reads){
-
-
-}
-
-
 hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
 hets2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam"
 hets1frag <- 50.731011 
@@ -80,3 +76,7 @@ hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
 file <- '/auto/cmb-00/rr/engie/RNA/merged1.bed'
 bed1 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
 bed1R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),strand=bed1$V4)
+
+clusters <- findReadRegions("chr1",39693870,39800883,"-",bed1R)
+MAML_TPM <- TPMCalc(clusters,hetsread1)
+MAML_TPM2 <- TPMCalc(clusters,hetsread2)
