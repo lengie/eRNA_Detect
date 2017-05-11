@@ -43,12 +43,12 @@ TPM <- TPMCalc(clusters, reads){
 	opp_strand <- clusters
 	#want to change the run value but not run length of the strand
 	anti <- strand(clusters)
-	for(i=1:length(strand(clusters))){
+	for(i=1:length(runValue(strand(clusters)))){
 		if(runValues(anti)[i]=="-"){
 			runValues(anti)[i] <- "+"
 		}else if (runValues(anti)[i]=="+"){runValues(anti)[i] <- "-"} #don't want to mess with the *
 	}
-	opp_strand$strand <- anti
+	strand(clusters) <- anti
 	
 	counts <- summarizeOverlaps(features=opp_strand,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	anti_counts <- assay(counts)
