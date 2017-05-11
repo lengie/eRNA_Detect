@@ -12,31 +12,20 @@
 
 ranges <- findReadRegions(chromosome,input_start,input_end,strand,bed){
 	interval <- IRanges(input_start,input_end)
+	list <- subsetByOverlaps(bed,interval)
 	
-	#search the bed file for a region that includes the input_start, if any
-	if(bed$chr[i]==chromosome && bed$strand[i]=strand && bed$start[i] <= input_start <= bed$end[i]){ #just the idea of it so far  
-		start <- bed$start[i]
-		end <- bed$end[i]
-		j <- end
-	}else{
-		start <- c()
-		end <- c()
-		j <- input_start
-	}
+	start <- c()
+	end <- c()
+	j <- 1
 	
-	
-	while(j < input_end){
-	
-	
-	
-		#Look for the bed file line that includes start, if any
-		#Look for next start, and where it ends
-		#If end < input.end, then keep going #but have to change end if there aren't any reads in the region
-		
-	
-		start <- c(start, )
-		end <- c(end, )
-		j <- 
+	if(length(ranges(list))==0){
+		print('No clusters of reads in range.')
+	} else{
+		while(j < length(ranges(list))){
+			start <- c(start, start(list)[j])
+			end <- c(end, end(list)[j])
+			j <- j+1
+		}
 	}
 	
 	ranges <- IRanges(start,end)
