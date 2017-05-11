@@ -36,8 +36,16 @@ clusters <- findReadRegions(chromosome,input_start,input_end,strand,bed){
 	#Report TPM, keep if it's over 2
 }
 
-newclusters <- removeZeroCounts(clusters,sense_counts){
-
+TPM <- TPMCalc(clusters, reads){
+	counts <- summarizeOverlaps(features=clusters,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	#just read strand from GRanges obj
+	opp_strand <- clusters
+	for(i=1:length(ranges(clusters))){
+		if(strand=="-"){
+			anti <- "+"
+		}else if (strand=="+"){anti <- "-"} #don't want to mess with the *
+	}
+	
 	j <- 0
 	newranges <- IRanges()
 	i <- length(ranges(clusters))
@@ -58,19 +66,16 @@ newclusters <- removeZeroCounts(clusters,sense_counts){
 		}
 	}
 	
-	#just read strand from GRanges obj
-	if(strand=="-"){
-		anti <- "+"
-	}else{anti <- "-"}
+
 
 	int <- GRanges(seqnames=chromosome,ranges=newranges,strand=anti)
 	counts <- summarizeOverlaps(features=int,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	anti_counts <- assay(counts)
-
 }
 
-TPM <- TPMCalc(){
-	
+TPM <- dataSet2Check(clusters,reads){
+
+
 }
 
 
