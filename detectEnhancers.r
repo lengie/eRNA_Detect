@@ -38,39 +38,30 @@ clusters <- findReadRegions(chromosome,input_start,input_end,strand,bed){
 
 TPM <- TPMCalc(clusters, reads){
 	counts <- summarizeOverlaps(features=clusters,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	sense_counts <- assay(counts)
 	#just read strand from GRanges obj
 	opp_strand <- clusters
-	for(i=1:length(ranges(clusters))){
-		if(strand=="-"){
-			anti <- "+"
-		}else if (strand=="+"){anti <- "-"} #don't want to mess with the *
+	#want to change the run value but not run length of the strand
+	anti <- strand(clusters)
+	for(i=1:length(strand(clusters))){
+		if(runValues(anti)[i]=="-"){
+			runValues(anti)[i] <- "+"
+		}else if (runValues(anti)[i]=="+"){runValues(anti)[i] <- "-"} #don't want to mess with the *
 	}
+	opp_strand$strand <- anti
 	
-	j <- 0
-	newranges <- IRanges()
-	i <- length(ranges(clusters))
-	for(1:i){
-		if(sense_counts[i]==0){
-			newranges <- append(newranges,ranges[i])
-			j <- j+1
-		}if(j==0){break}
-
-		if(length(ranges(list))==0){
-			print('No clusters of reads in range.')
-		} else{
-			while(j < length(ranges(list))){
-				start <- c(start, start(list)[j])
-				end <- c(end, end(list)[j])
-				j <- j+1
-			}
-		}
-	}
-	
-
-
-	int <- GRanges(seqnames=chromosome,ranges=newranges,strand=anti)
-	counts <- summarizeOverlaps(features=int,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	counts <- summarizeOverlaps(features=opp_strand,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	anti_counts <- assay(counts)
+	
+	#could we use an lapply instead?
+	#maybe if we appended the read counts as metadata in the GRanges obj...
+	rpk <- c()
+	for(i=1:length(ranges(cluster))){
+		rpk[i] <- sense_counts[i]/width(list)[i] #or do I have to use append 
+		 
+	}
+	scaling <- sum(rpk)/1000000 #except this should be for the whole sample
+	TPM <- rpk/scaling 
 }
 
 TPM <- dataSet2Check(clusters,reads){
