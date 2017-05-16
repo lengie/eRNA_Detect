@@ -69,7 +69,7 @@ TPM <- TPMCalc(clusters, reads){
 
 FPKM <- FPKMCalc(clusters,reads,scaling_factor){
 	counts <- summarizeOverlaps(features=clusters,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-	sense_counts <- assay(counts)
+	sense_counts <- assay(counts) #a matrix
 	#just read strand from GRanges obj
 	opp_strand <- reverseStrand(clusters)
 	
@@ -78,7 +78,17 @@ FPKM <- FPKMCalc(clusters,reads,scaling_factor){
 	
 	
 	FPKM <- data.frame()
-	colnames(FPKM) <- c("start","width","sense","antisense")
+	colnames(FPKM) <- c("start","end","sense","antisense")
+	#reads divided by scaling factor and then divide by read length
+	#FPKM#start <- start(clusters)[1,,]
+	$FPKM$end <- end(clusters)[]
+	FPKM$sense <- lapply(sense_counts,#divide each by /scaling_factor/(start[i]-end[i]))
+	FPKM$antisense <- lapply(anti_counts,for(i=1:length){anti_count[i]/scaling_factor/(start[i]-end[i])})
+}
+
+scaling <- TPMScaleFac(reads,gtf){
+	
+	
 }
 
 hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
@@ -87,7 +97,13 @@ hets1frag <- 50.731011
 hets2frag <- 56.315336 
 flag <- scanBamFlag(isNotPrimaryRead=FALSE, isDuplicate=FALSE)
 hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
-hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
+#hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
+g <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz10.87.chr.gtf" 
+txdb <- makeTxDbFromGFF(g, format="gtf",circ_seqs = character())
+sequence <- seqlevels(txdb)
+new <- mapSeqlevels(sequence,"UCSC")
+new <- new[complete.cases(new)]
+txdb <- renameSeqlevels(txdb,new)
 file <- '/auto/cmb-00/rr/engie/RNA/merged1.bed'
 bed1 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
 bed1R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),strand=bed1$V4)
