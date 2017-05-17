@@ -63,25 +63,28 @@ detectEnhancers{
 		FPKM %>% mutate(sense = sense/(scaling_factor*width)) %>% mutate(antisense=antisense/(scaling_factor*width))
 	}
 
-	scaling <- TPMScaleFac(reads,merged){
+	scaling <- TPMScaleFac(reads,merged,totalreads){
 		#To calculate the scaling factor for TPM for an experiment, looking at unannotated regions rather than a GTF file's annotated genes
 		counts <- summarizeOverlaps(features=merged,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 		allcounts <- assay(counts)
 		df <- data.frame(seqnames(clusters),start(clusters),width(clusters),allcounts)  
 		colnames(df) <- c("chr","start","width","counts")
 		df <- mutate(df, RPK = counts/width)
-		scaling <- sum(df$RPK)/1000000
+		scaling <- sum(df$RPK)/totalreads
 	}
 	
 	TPM <- TPMCalc(clusters,reads,scaling){
 		#Same as with FPKM, assumes only given region on strand with enhancer
 		counts <- summarizeOverlaps(features=clusters,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 		sense_counts <- assay(counts)
-		#just read strand from GRanges obj
 		opp_strand <- reverseStrand(clusters)
 		
 		counts <- summarizeOverlaps(features=opp_strand,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 		anti_counts <- assay(counts)
+		
+		TPM <- data.frame(seqnames(clusters),start(clusters),width(clusters),sense_counts,anti_counts)  
+		colnames(TPM) <- c("chr","start","width","sense","antisense")
+		TPM %>% mutate(sense = sense/(scaling_factor*width)) %>% mutate(antisense=antisense/(scaling_factor*width))
 		
 		
 		
@@ -91,7 +94,7 @@ detectEnhancers{
 	hets2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam"
 	hets1frag <- 50.731011 
 	hets2frag <- 56.315336 
-	flag <- scanBamFlag(isNotPrimaryRead=FALSE, isDuplicate=FALSE)
+	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
 	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
 	#hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
 	#Will use gtf file later for validation, but calc scaling factor with merge  
@@ -107,14 +110,24 @@ detectEnhancers{
 	#FPKM1 <- FPKM(bed1R,hetsread1,hets1frag) 
 	
 	#FPKM for all merged regions:
-	counts <- summarizeOverlaps(features=clusters,reads=reads,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	counts <- summarizeOverlaps(features=bed1R,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	read_counts <- assay(counts) 
 	FPKM <- data.frame(seqnames(bed1R),start(bed1R),width(bed1R),read_counts)
 	colnames(FPKM) <- c("chr","start","width","counts")
-	FPKM %>% mutate(sense = sense/(scaling_factor*width)) %>% mutate(antisense=antisense/(scaling_factor*width))
+	FPKM <- mutate(FPKM,fpkm = counts/(hets1frag*width))
+	thresh <- filter(FPKM,fpkm>1)
+	#the read counts are incorrect somehow...
+	zeroes <- which(FPKM$counts==0)
+	switch <- bed1R[zeroes]
+	anti <- strand(switch)
+	for(i=1:length(runValue(anti))){
+		if(runValues(anti)[i]=="-"){
+			runValues(anti)[i] <- "+"
+		}else if (runValues(anti)[i]=="+"){runValues(anti)[i] <- "-"}
+	}
+	strand(switch) <- anti
 	
-	
-	TPMscale <- TPMScaleFac(hetsread1,bed1R)
+	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
 	clusters <- findReadRegions("chr1",39693870,39800883,"-",bed1R)
 	MAML_TPM <- TPMCalc(clusters,hetsread1,TPMscale)
