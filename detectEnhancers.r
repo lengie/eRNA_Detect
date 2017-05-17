@@ -14,6 +14,7 @@ library(GenomicAlignments)
 library(GenomicFeatures)
 library(ggplot2)
 library(dtplyr) 
+library(data.table)
 
 detectEnhancers{
 
@@ -123,6 +124,8 @@ detectEnhancers{
 		}else if (runValues(anti)[i]=="+"){runValues(anti)[i] <- "-"}
 	}
 	strand(switch) <- anti
+	testcounts <- summarizeOverlaps(features=bed1R,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	test_counts <- assay(testcounts) 
 	
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
