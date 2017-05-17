@@ -70,7 +70,7 @@ detectEnhancers{
 		df <- data.frame(seqnames(clusters),start(clusters),width(clusters),allcounts)  
 		colnames(df) <- c("chr","start","width","counts")
 		df <- mutate(df, RPK = counts/width)
-		scaling <- sum(df$RPK)/totalreads
+		scaling <- sum(df$RPK)*totalreads
 	}
 	
 	TPM <- TPMCalc(clusters,reads,scaling){
@@ -84,10 +84,7 @@ detectEnhancers{
 		
 		TPM <- data.frame(seqnames(clusters),start(clusters),width(clusters),sense_counts,anti_counts)  
 		colnames(TPM) <- c("chr","start","width","sense","antisense")
-		TPM %>% mutate(sense = sense/(scaling_factor*width)) %>% mutate(antisense=antisense/(scaling_factor*width))
-		
-		
-		
+		TPM %>% mutate(sense = sense/scaling_factor) %>% mutate(antisense=antisense/scaling_factor)		
 	}
 
 	hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
