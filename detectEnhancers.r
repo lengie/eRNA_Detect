@@ -118,11 +118,10 @@ detectEnhancers{
 	zeroes <- which(FPKM$counts==0)
 	switch <- bed1R[zeroes]
 	anti <- strand(switch)
-	for(i=1:length(runValue(anti))){
-		if(runValues(anti)[i]=="-"){
-			runValues(anti)[i] <- "+"
-		}else if (runValues(anti)[i]=="+"){runValues(anti)[i] <- "-"}
-	}
+	#length(which(strand(anti)=="*"))
+	anti[anti=="+"] <- "*"
+	anti[anti=="-"] <- "+"
+	anti[anti=="*"] <- "-"
 	strand(switch) <- anti
 	testcounts <- summarizeOverlaps(features=bed1R,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	test_counts <- assay(testcounts) 
