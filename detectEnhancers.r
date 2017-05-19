@@ -133,9 +133,13 @@ detectEnhancers{
 	colnames(switchFPKM) <- c("chr","start","width","counts")
 	switchFPKM <- mutate(switchFPKM,fpkm = counts/(hets1frag*width))
 	
+	file <- '/auto/cmb-00/rr/engie/RNA/merged1_nobookend.bed'
+	bed1nb <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
+	bed1nbR <- GRanges(seqnames=bed1nb$V1,ranges=IRanges(start=bed1nb$V2, end=bed1nb$V3),strand=bed1nb$V4)
+	
 	file <- '/auto/cmb-00/rr/engie/RNA/merged2.bed'
 	bed2 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
-	bed2R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed2$V2, end=bed2$V3),strand=bed2$V4)
+	bed2R <- GRanges(seqnames=bed2$V1,ranges=IRanges(start=bed2$V2, end=bed2$V3),strand=bed2$V4)
 	counts2 <- summarizeOverlaps(features=bed2R,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	read_counts2 <- assay(counts2) 
 	FPKM2 <- data.frame(seqnames(bed2R),start(bed2R),width(bed2R),read_counts2)
@@ -151,7 +155,21 @@ detectEnhancers{
 	FPKM2nb <- data.frame(seqnames(bed2nbR),start(bed2nbR),width(bed2nbR),read_counts2nb)
 	colnames(FPKM2nb) <- c("chr","start","width","counts")
 	FPKM2nb <- mutate(FPKM2nb,fpkm = counts/(hets2frag*width))
+	#> length(which(FPKM2==0))
+	#[1] 35542
 	
+	#> length(start(bed2R))
+	#[1] 40839
+	#> length(start(bed2nbR))
+	#[1] 245760
+	#> length(start(bed1R))
+	#[1] 275101
+	#> length(seqnames(bed1nbR))
+	#[1] 277035
+	#> length(seqnames(hetsread2))
+	#[1] 49779418
+
+
 	
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
