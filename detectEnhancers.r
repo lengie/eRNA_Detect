@@ -94,7 +94,7 @@ detectEnhancers{
 	hets2frag <- 56.315336 
 	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
 	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
-	#hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
+	hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
 	#Will use gtf file later for validation, but calc scaling factor with merge  
 	#g <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz10.87.chr.gtf" 
 	#txdb <- makeTxDbFromGFF(g, format="gtf",circ_seqs = character())
@@ -115,7 +115,7 @@ detectEnhancers{
 	FPKM <- mutate(FPKM,fpkm = counts/(hets1frag*width))
 	thresh <- filter(FPKM,fpkm>1)
 	#the read counts are incorrect somehow...
-	zeroes <- which(FPKM$counts==0)
+	zeroes <- which(FPKM$fpkm==0)
 	switch <- bed1R[zeroes]
 	anti <- strand(switch)
 	#length(which(strand(anti)=="*"))
@@ -123,8 +123,35 @@ detectEnhancers{
 	anti[anti=="-"] <- "+"
 	anti[anti=="*"] <- "-"
 	strand(switch) <- anti
-	testcounts <- summarizeOverlaps(features=bed1R,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	testcounts <- summarizeOverlaps(features=switch,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	test_counts <- assay(testcounts) 
+	#> length(which(test_counts==0))                                 
+	#[1] 19934
+	#> length(which(test_counts==1))
+	#[1] 45970
+	switchFPKM <- data.frame(seqnames(switch),start(switch),width(switch),test_counts)
+	colnames(switchFPKM) <- c("chr","start","width","counts")
+	switchFPKM <- mutate(switchFPKM,fpkm = counts/(hets1frag*width))
+	
+	file <- '/auto/cmb-00/rr/engie/RNA/merged2.bed'
+	bed2 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
+	bed2R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed2$V2, end=bed2$V3),strand=bed2$V4)
+	counts2 <- summarizeOverlaps(features=bed2R,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	read_counts2 <- assay(counts2) 
+	FPKM2 <- data.frame(seqnames(bed2R),start(bed2R),width(bed2R),read_counts2)
+	colnames(FPKM2) <- c("chr","start","width","counts")
+	FPKM2 <- mutate(FPKM2,fpkm = counts/(hets2frag*width))
+	thresh <- filter(FPKM2,fpkm>1)
+
+	file <- '/auto/cmb-00/rr/engie/RNA/merged2_nobookend.bed'
+	bed2nb <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
+	bed2nbR <- GRanges(seqnames=bed2nb$V1,ranges=IRanges(start=bed2nb$V2, end=bed2nb$V3),strand=bed2nb$V4)
+	counts2nb <- summarizeOverlaps(features=bed2nbR,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	read_counts2nb <- assay(counts2nb) 
+	FPKM2nb <- data.frame(seqnames(bed2nbR),start(bed2nbR),width(bed2nbR),read_counts2nb)
+	colnames(FPKM2nb) <- c("chr","start","width","counts")
+	FPKM2nb <- mutate(FPKM2nb,fpkm = counts/(hets2frag*width))
+	
 	
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
