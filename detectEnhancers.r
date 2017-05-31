@@ -13,8 +13,9 @@ library(Rsamtools)
 library(GenomicAlignments)
 library(GenomicFeatures)
 library(ggplot2)
-library(dtplyr) 
+library(dplyr) 
 library(data.table)
+library(Rsubread)
 
 detectEnhancers{
 
@@ -145,8 +146,22 @@ detectEnhancers{
 	FPKM2 <- data.frame(seqnames(bed2R),start(bed2R),width(bed2R),read_counts2)
 	colnames(FPKM2) <- c("chr","start","width","counts")
 	FPKM2 <- mutate(FPKM2,fpkm = counts/(hets2frag*width))
-	thresh <- filter(FPKM2,fpkm>1)
-
+	#> length(which(FPKM2==0))
+	#[1] 35542
+	zeroes <- which(FPKM$fpkm==0)
+	switch <- bed1R[zeroes]
+	anti <- strand(switch)
+	#length(which(strand(anti)=="*"))
+	anti[anti=="+"] <- "*"
+	anti[anti=="-"] <- "+"
+	anti[anti=="*"] <- "-"
+	strand(switch) <- anti
+	testcounts <- summarizeOverlaps(features=switch,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	test_counts <- assay(testcounts) 
+	switchFPKM <- data.frame(seqnames(switch),start(switch),width(switch),test_counts)
+	colnames(switchFPKM) <- c("chr","start","width","counts")
+	switchFPKM <- mutate(switchFPKM,fpkm = counts/(hets1frag*width))
+	
 	file <- '/auto/cmb-00/rr/engie/RNA/merged2_nobookend.bed'
 	bed2nb <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
 	bed2nbR <- GRanges(seqnames=bed2nb$V1,ranges=IRanges(start=bed2nb$V2, end=bed2nb$V3),strand=bed2nb$V4)
@@ -155,9 +170,7 @@ detectEnhancers{
 	FPKM2nb <- data.frame(seqnames(bed2nbR),start(bed2nbR),width(bed2nbR),read_counts2nb)
 	colnames(FPKM2nb) <- c("chr","start","width","counts")
 	FPKM2nb <- mutate(FPKM2nb,fpkm = counts/(hets2frag*width))
-	#> length(which(FPKM2==0))
-	#[1] 35542
-	
+
 	#> length(start(bed2R))
 	#[1] 40839
 	#> length(start(bed2nbR))
@@ -168,8 +181,92 @@ detectEnhancers{
 	#[1] 277035
 	#> length(seqnames(hetsread2))
 	#[1] 49779418
+	
+	hets26 <- "/auto/cmb-00/rr/engie/RNA/26hr1.bam" 
+	hets26read1 <- readGAlignmentPairs(hets26,param=ScanBamParam(flag=flag))
 
-
+	#using the featureCounts/Subreads output from terminal instead
+	#This is no bookend and multimapping reads
+	file <- "/auto/cmb-00/rr/engie/RNA/output_strand_noB.tsv"
+	hets1_mm <- fread(file,fill=TRUE,data.table=FALSE,skip=1,header=TRUE) 
+	colnames(hets1_mm)[7] <- "Counts"
+	hets1_mm <- mutate(hets1_mm,FPKM = Counts/(hets1frag*Length))
+	hets1_mm <- mutate(hets1_mm,RPK = Counts/Length)
+	scaling <- sum(hets1_mm$RPK)*hets1frag
+	[1] 362997.2
+	hets1_mm <- mutate(hets1_mm, TPM = Counts/scaling)
+	write.table(hets1_mm,file="hets1_mm_FPKMTPM.csv",row.names=FALSE) 
+	
+	#Try no bookend and NO multimapping reads
+	file <- "/auto/cmb-00/rr/engie/RNA/hets1_noB_noMultim.tsv"
+	hets1 <- fread(file,fill=TRUE,data.table=FALSE,skip=1,header=TRUE) 
+	colnames(hets1)[7] <- "Counts"
+	hets1 <- mutate(hets1,FPKM = Counts/(hets1frag*Length))
+	hets1 <- mutate(hets1,RPK = Counts/Length)
+	scaling <- sum(hets1$RPK)*hets1frag
+	#[1] 241875.2
+	hets1 <- mutate(hets1, TPM = Counts/scaling)
+	write.table(hets1,file="hets1_FPKMTPM.csv",row.names=FALSE) 
+	
+	file <- "/auto/cmb-00/rr/engie/RNA/hets2_noB_noMultim.tsv"
+	hets2 <- fread(file,fill=TRUE,data.table=FALSE,skip=1,header=TRUE) 
+	hets2frag <- 56.315336 
+	colnames(hets2)[7] <- "Counts"
+	hets2 <- mutate(hets2,FPKM = Counts/(hets2frag*Length))
+	hets2 <- mutate(hets2,RPK = Counts/Length)
+	scaling2 <- sum(hets2$RPK)*hets2frag
+	#[1] 251975.5
+	hets2 <- mutate(hets2, TPM = Counts/scaling2)
+	write.table(hets2,file="hets2_FPKMTPM.csv",row.names=FALSE) 
+	
+	file <- "/auto/cmb-00/rr/engie/RNA/hets2_noB.tsv"
+	hets2_mm <- fread(file,fill=TRUE,data.table=FALSE,skip=1,header=TRUE) 
+	colnames(hets2_mm)[7] <- "Counts"
+	hets2_mm <- mutate(hets2_mm,FPKM = Counts/(hets2frag*Length))
+	hets2_mm <- mutate(hets2_mm,RPK = Counts/Length)
+	scaling2 <- sum(hets2_mm$RPK)*hets2frag
+	#[1] 402954.9
+	hets2_mm <- mutate(hets2_mm, TPM = Counts/scaling2)
+	write.table(hets2_mm,file="hets2_mm_FPKMTPM.csv",row.names=FALSE) 
+	
+	#brute force test on chr 21 RAI14-RXFP3
+	rai <- GRanges(seqnames="chr21",ranges=IRanges(start=seq(19492351,19497301,by=50),end=seq(19492401,19497351,by=50)),strand="-")
+	rai_counts <- summarizeOverlaps(features=rai,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	rai4k_minus <- assay(rai_counts)
+	rai <- GRanges(seqnames="chr21",ranges=IRanges(start=seq(19492351,19497301,by=50),end=seq(19492401,19497351,by=50)),strand="+")
+	rai_counts <- summarizeOverlaps(features=rai,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	rai4k_plus <- assay(rai_counts)
+	qplot(1:length(rai4k_minus),rai4k_plus)
+	qplot(1:length(rai4k_minus),rai4k_minus)
+	
+	rai <- GRanges(seqnames="chr21",ranges=IRanges(start=seq(19492351,19497301,by=50),end=seq(19492401,19497351,by=50)),strand="-")
+	rai_counts <- summarizeOverlaps(features=rai,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	rai4k_minus2 <- assay(rai_counts)
+	rai <- GRanges(seqnames="chr21",ranges=IRanges(start=seq(19492351,19497301,by=50),end=seq(19492401,19497351,by=50)),strand="+")
+	rai_counts <- summarizeOverlaps(features=rai,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	rai4k_plus2 <- assay(rai_counts)
+	qplot(1:length(rai4k_minus2),rai4k_plus2)
+	qplot(1:length(rai4k_minus2),rai4k_minus2)
+	
+	#brute force test on chr 6 BRINP3-RGS8 
+	FAM <- GRanges(seqnames="chr6",ranges=IRanges(start=seq(35573880,35574020,by=10),end=seq(35573890,35574030,by=10)),strand="+")
+	fam_counts <- summarizeOverlaps(features=FAM,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	fam75k_plus <- assay(fam_counts)
+	FAM <- GRanges(seqnames="chr6",ranges=IRanges(start=seq(35573880,35574020,by=10),end=seq(35573890,35574030,by=10)),strand="-")
+	fam_counts <- summarizeOverlaps(features=FAM,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	fam75k_minus <- assay(fam_counts)
+	qplot(1:length(fam75k_minus),fam75k_plus)
+	qplot(1:length(fam75k_minus),fam75k_minus)	
+		
+	FAM <- GRanges(seqnames="chr6",ranges=IRanges(start=seq(35573880,35574020,by=10),end=seq(35573890,35574030,by=10)),strand="+")
+	fam_counts <- summarizeOverlaps(features=FAM,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	fam75k_plus2 <- assay(fam_counts)
+	FAM <- GRanges(seqnames="chr6",ranges=IRanges(start=seq(35573880,35574020,by=10),end=seq(35573890,35574030,by=10)),strand="-")
+	fam_counts <- summarizeOverlaps(features=FAM,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	fam75k_minus2 <- assay(fam_counts)
+	qplot(1:length(fam75k_minus2),fam75k_plus2)
+	qplot(1:length(fam75k_minus2),fam75k_minus2)
+	
 	
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
