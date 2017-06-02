@@ -261,6 +261,7 @@ detectEnhancers{
 	fam_counts <- summarizeOverlaps(features=FAM,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	read_count <- assay(fam_counts)
 	fam_FPKM <- read_count/(hets1frag*580) 
+	#Actual sequence is 6:35573980..35574560
 		
 	FAM <- GRanges(seqnames="chr6",ranges=IRanges(start=seq(35573980,35575020,by=10),end=seq(35573990,35575030,by=10)),strand="+")
 	fam_counts <- summarizeOverlaps(features=FAM,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
@@ -271,6 +272,18 @@ detectEnhancers{
 	qplot(1:length(fam75k_minus2),fam75k_plus2)
 	qplot(1:length(fam75k_minus2),fam75k_minus2)
 	
+	#try getting counts when I include multimapping?
+	hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
+	flag <- scanBamFlag(isSecondaryAlignment=TRUE,isDuplicate=FALSE)
+	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
+	
+	
+	#Calculating FPKM of the subreads tsv file from the original merge
+	#Let's try reading the multipmapped .tsv file and calculating FPKMs from that?
+	file <- '/auto/cmb-00/rr/engie/RNA/output_strand_noB.tsv'
+	tsv <- fread(file,skip=1,header=TRUE,data.table=FALSE)
+	tsv <- mutate(tsv,fpkm = Aligned.sortedByCoord.out.bam/(hets1frag*Length))
+	#should do a histogram of these
 	
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
