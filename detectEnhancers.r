@@ -283,7 +283,11 @@ detectEnhancers{
 	file <- '/auto/cmb-00/rr/engie/RNA/output_strand_noB.tsv'
 	tsv <- fread(file,skip=1,header=TRUE,data.table=FALSE)
 	tsv <- mutate(tsv,fpkm = Aligned.sortedByCoord.out.bam/(hets1frag*Length))
-	#should do a histogram of these
+	
+	#geom_freqpoly(mapping = NULL, data = NULL, stat = "bin",position = "identity", ..., na.rm = FALSE, show.legend = NA,inherit.aes = TRUE)
+
+	ggplot(tsv,aes(fpkm)) + geom_histogram(bins = 100, show.legend = NA, inherit.aes = TRUE)
+	#position = "stack", ..., binwidth = NULL, na.rm = FALSE, stat = "bin", 
 	
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
