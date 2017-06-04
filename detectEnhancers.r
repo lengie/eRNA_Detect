@@ -277,7 +277,6 @@ detectEnhancers{
 	flag <- scanBamFlag(isSecondaryAlignment=TRUE,isDuplicate=FALSE)
 	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
 	
-	
 	#Calculating FPKM of the subreads tsv file from the original merge
 	#Let's try reading the multipmapped .tsv file and calculating FPKMs from that?
 	file <- '/auto/cmb-00/rr/engie/RNA/output_strand_noB.tsv'
@@ -289,6 +288,43 @@ detectEnhancers{
 	ggplot(tsv,aes(fpkm)) + geom_histogram(bins = 100, show.legend = NA, inherit.aes = TRUE)
 	#position = "stack", ..., binwidth = NULL, na.rm = FALSE, stat = "bin", 
 	
+	
+	#kept only NH:i:1 reads in the sam file?
+	file <- "/auto/cmb-00/rr/engie/RNA/merged1_nob_noMultim.bed"
+	bed1 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
+	bed1R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),strand=bed1$V4)
+	hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
+	hets1frag <- 50.731011 
+	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
+	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
+	counts <- summarizeOverlaps(features=bed1R,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	read_counts <- assay(counts) 
+	TPM <- data.frame(seqnames(bed1R),start(bed1R),width(bed1R),read_counts)
+	colnames(TPM) <- c("chr","start","width","counts")
+	TPM <- mutate(TPM,fpkm = counts/(hets1frag*width))
+	TPM <- mutate(TPM,rpk = counts/width)
+	scaling <- sum(TPM$rpk)*hets1frag
+	[1] 195596.9
+	TPM <- mutate(TPM, tpm = counts/scaling)
+	#> length(which(TPM$tpm==0))
+	#[1] 121928
+	#> dim(TPM)
+	#[1] 277035      7
+	#> 121928/277035
+	#[1] 0.4401177
+	ggplot(TPM,aes(tpm)) + geom_histogram(bins = 100, show.legend = NA, inherit.aes = TRUE)
+	#can we remove the 0s and try the histogram again?
+	
+	file <- '/auto/cmb-00/rr/engie/RNA/merged1.bed'
+	bedcheck <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
+	bedcheckR <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),strand=bed1$V4)
+
+	df <- rbind(bedcheckR$start,bed1R$start)
+	dupRows <- dupsBetweenGroups(df, "Coder")
+	
+	
+	
+	#using the above functions
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
 	clusters <- findReadRegions("chr1",39693870,39800883,"-",bed1R)
