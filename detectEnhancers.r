@@ -289,13 +289,15 @@ detectEnhancers{
 	#position = "stack", ..., binwidth = NULL, na.rm = FALSE, stat = "bin", 
 	
 	
-	#kept only NH:i:1 reads in the sam file?
+	#Using grep to remove multimapped reads
 	file <- "/auto/cmb-00/rr/engie/RNA/merged1_nob_noMultim.bed"
 	bed1 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
 	bed1R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),strand=bed1$V4)
-	hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
+	#length(start(bed1R)) == 277105
+	hets1 <- "/auto/cmb-00/rr/engie/RNA/hets1_noMultim.bam" 
 	hets1frag <- 50.731011 
 	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
+	#galp <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))	
 	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
 	counts <- summarizeOverlaps(features=bed1R,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	read_counts <- assay(counts) 
@@ -304,26 +306,29 @@ detectEnhancers{
 	TPM <- mutate(TPM,fpkm = counts/(hets1frag*width))
 	TPM <- mutate(TPM,rpk = counts/width)
 	scaling <- sum(TPM$rpk)*hets1frag
-	[1] 195596.9
-	TPM <- mutate(TPM, tpm = counts/scaling)
-	#> length(which(TPM$tpm==0))
-	#[1] 121928
-	#> dim(TPM)
-	#[1] 277035      7
-	#> 121928/277035
-	#[1] 0.4401177
+	[1] 172468
+	TPM <- mutate(TPM, tpm = counts/172468)
 	ggplot(TPM,aes(tpm)) + geom_histogram(bins = 100, show.legend = NA, inherit.aes = TRUE)
-	#can we remove the 0s and try the histogram again?
-	
-	file <- '/auto/cmb-00/rr/engie/RNA/merged1.bed'
-	bedcheck <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
-	bedcheckR <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),strand=bed1$V4)
-
-	df <- rbind(bedcheckR$start,bed1R$start)
-	dupRows <- dupsBetweenGroups(df, "Coder")
 	
 	
-	
+	int_test <- GRanges(seqnames="chr2",ranges=IRanges(start=seq(14817009,14897659,by=50),end=seq(14817209,14897859,by=50)),strand="+")
+	test_counts <- summarizeOverlaps(features=int_test,reads=hets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	pde_3_plus <- assay(test_counts)
+	int_test <- GRanges(seqnames="chr2",ranges=IRanges(start=seq(14817009,14897659,by=50),end=seq(14817209,14897859,by=50)),strand="-")
+	test_counts <- summarizeOverlaps(features=int_test,reads=hets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	pde_3_minus <- assay(test_counts)
+	qplot(1:length(pde_3_plus),pde_3_plus)
+	qplot(1:length(pde_3_plus),pde_3_minus)
+ 
+	int_test <- GRanges(seqnames="chr2",ranges=IRanges(start=seq(14817009,14897659,by=50),end=seq(14817209,14897859,by=50)),strand="+")
+	test_counts <- summarizeOverlaps(features=int_test,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	pde_3_plus2 <- assay(test_counts)
+	int_test <- GRanges(seqnames="chr2",ranges=IRanges(start=seq(14817009,14897659,by=50),end=seq(14817209,14897859,by=50)),strand="-")
+	test_counts <- summarizeOverlaps(features=int_test,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	pde_3_minus2 <- assay(test_counts)
+	qplot(1:length(pde_3_plus2),pde_3_plus2)
+	qplot(1:length(pde_3_plus2),pde_3_minus2)
+ 
 	#using the above functions
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
 	
