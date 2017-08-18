@@ -498,10 +498,10 @@ detectEnhancers{
 	qplot(1:length(tbx5_minus2),tbx5_plus2)
 	
 	tbx5b <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(22643860,22672660,by=50),end=seq(22643910,22672710,by=50)),strand="+")
-	tbx_counts <- summarizeOverlaps(features=tbx5b,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx_counts <- summarizeOverlaps(features=tbx5b,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	tbx5_plus <- assay(tbx_counts)
 	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(22643860,22672660,by=50),end=seq(22643910,22672710,by=50)),strand="-")
-	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	tbx5_minus <- assay(tbx_counts)
 	qplot(1:length(tbx5_minus),tbx5_minus)
 	qplot(1:length(tbx5_minus),tbx5_plus)
