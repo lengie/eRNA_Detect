@@ -464,10 +464,10 @@ detectEnhancers{
 	
 	#Testing from Smemo and Dickel papers: TBX5
 	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71394233,71599334,by=50),end=seq(71394283,71599384,by=50)),strand="+")
-	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	tbx5_plus <- assay(tbx_counts)
 	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71394233,71599334,by=50),end=seq(71394283,71599384,by=50)),strand="-")
-	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	tbx5_minus <- assay(tbx_counts)
 	qplot(1:length(tbx5_minus),tbx5_minus)
 	qplot(1:length(tbx5_minus),tbx5_plus)
@@ -481,10 +481,10 @@ detectEnhancers{
 	qplot(1:length(tbx5_minus2),tbx5_plus2)
 	
 	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71505142,71532242,by=50),end=seq(71505192,71532292,by=50)),strand="+")
-	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	tbx5_plus <- assay(tbx_counts)
 	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71505142,71532242,by=50),end=seq(71505192,71532292,by=50)),strand="-")
-	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	tbx5_minus <- assay(tbx_counts)
 	qplot(1:length(tbx5_minus),tbx5_minus)
 	qplot(1:length(tbx5_minus),tbx5_plus)
