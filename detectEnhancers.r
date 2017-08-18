@@ -15,6 +15,7 @@ library(GenomicFeatures)
 library(ggplot2)
 library(dplyr) 
 library(data.table)
+library(DESeq2)
 library(Rsubread)
 
 detectEnhancers{
@@ -460,9 +461,58 @@ detectEnhancers{
 	ptpn_plus2 <- assay(ptpn_counts)
 	qplot(1:length(ptpn_plus2),ptpn_minus2)
 	qplot(1:length(ptpn_minus2),ptpn_plus2)
-
 	
+	#Testing from Smemo and Dickel papers: TBX5
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71394233,71599334,by=50),end=seq(71394283,71599384,by=50)),strand="+")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_plus <- assay(tbx_counts)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71394233,71599334,by=50),end=seq(71394283,71599384,by=50)),strand="-")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_minus <- assay(tbx_counts)
+	qplot(1:length(tbx5_minus),tbx5_minus)
+	qplot(1:length(tbx5_minus),tbx5_plus)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71394233,71599334,by=50),end=seq(71394283,71599384,by=50)),strand="+")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_plus2 <- assay(tbx_counts)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71394233,71599334,by=50),end=seq(71394283,71599384,by=50)),strand="-")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_minus2 <- assay(tbx_counts)
+	qplot(1:length(tbx5_minus2),tbx5_minus2)
+	qplot(1:length(tbx5_minus2),tbx5_plus2)
 	
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71505142,71532242,by=50),end=seq(71505192,71532292,by=50)),strand="+")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_plus <- assay(tbx_counts)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71505142,71532242,by=50),end=seq(71505192,71532292,by=50)),strand="-")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_minus <- assay(tbx_counts)
+	qplot(1:length(tbx5_minus),tbx5_minus)
+	qplot(1:length(tbx5_minus),tbx5_plus)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71505142,71532242,by=50),end=seq(71505192,71532292,by=50)),strand="+")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_plus2 <- assay(tbx_counts)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(71505142,71532242,by=50),end=seq(71505192,71532292,by=50)),strand="-")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_minus2 <- assay(tbx_counts)
+	qplot(1:length(tbx5_minus2),tbx5_minus2)
+	qplot(1:length(tbx5_minus2),tbx5_plus2)
+	
+	tbx5b <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(22643860,22672660,by=50),end=seq(22643910,22672710,by=50)),strand="+")
+	tbx_counts <- summarizeOverlaps(features=tbx5b,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_plus <- assay(tbx_counts)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(22643860,22672660,by=50),end=seq(22643910,22672710,by=50)),strand="-")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_minus <- assay(tbx_counts)
+	qplot(1:length(tbx5_minus),tbx5_minus)
+	qplot(1:length(tbx5_minus),tbx5_plus)
+	tbx5 <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(22643860,22672660,by=50),end=seq(22643910,22672710,by=50)),strand="+")
+	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_plus2 <- assay(tbx_counts)
+	tbx5b <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(22643860,22672660,by=50),end=seq(22643910,22672710,by=50)),strand="-")
+	tbx_counts <- summarizeOverlaps(features=tbx5b,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	tbx5_minus2 <- assay(tbx_counts)
+	qplot(1:length(tbx5_minus2),tbx5_minus2)
+	qplot(1:length(tbx5_minus2),tbx5_plus2)	
 	
 	#using the above functions
 	TPMscale <- TPMScaleFac(hetsread1,bed1R,hets1frag)
@@ -475,4 +525,18 @@ detectEnhancers{
 	bach2FPKM <- FPKMCalc(bach2,hetsread1,hets1frag)
 	bach2FPKMcheck <- FPKMCalc(bach2,hetsread3,hets2frag)
 
+	
 }
+
+	HSHeart <- "/auto/cmb-00/rr/engie/RNA/GRCh38.illumina.heart.1.bam" 
+	#this is paired
+	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
+	HumHeart <- readGAlignments(HSHeart,param=ScanBamParam(flag=flag))
+	
+	file <- '/auto/cmb-00/rr/engie/RNA/26hr1.bg'
+	bg26 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE)
+	head(bg26)
+	unique(bg26$1)
+	bg26_1R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),score=bed1$V4)
+	
+	
