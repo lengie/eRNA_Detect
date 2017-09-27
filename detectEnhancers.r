@@ -90,7 +90,7 @@ detectEnhancers{
 		TPM %>% mutate(sense = sense/scaling_factor) %>% mutate(antisense=antisense/scaling_factor)		
 	}
 
-	hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
+	hets1 <- "/auto/cmb-00/rr/engie/RNA/hets1.bam" 
 	hets2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam"
 	hets1frag <- 50.731011 
 	hets2frag <- 56.315336 
@@ -274,7 +274,7 @@ detectEnhancers{
 	qplot(1:length(fam75k_minus2),fam75k_minus2)
 	
 	#try getting counts when I include multimapping?
-	hets1 <- "/auto/cmb-00/rr/engie/RNA/Aligned.sortedByCoord.out.bam" 
+	hets1 <- "/auto/cmb-00/rr/engie/RNA/hets1.bam" 
 	flag <- scanBamFlag(isSecondaryAlignment=TRUE,isDuplicate=FALSE)
 	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
 	
@@ -282,7 +282,7 @@ detectEnhancers{
 	#Let's try reading the multipmapped .tsv file and calculating FPKMs from that?
 	file <- '/auto/cmb-00/rr/engie/RNA/output_strand_noB.tsv'
 	tsv <- fread(file,skip=1,header=TRUE,data.table=FALSE)
-	tsv <- mutate(tsv,fpkm = Aligned.sortedByCoord.out.bam/(hets1frag*Length))
+	tsv <- mutate(tsv,fpkm = hets1.bam/(hets1frag*Length))
 	
 	#geom_freqpoly(mapping = NULL, data = NULL, stat = "bin",position = "identity", ..., na.rm = FALSE, show.legend = NA,inherit.aes = TRUE)
 
@@ -495,7 +495,7 @@ detectEnhancers{
 	tbx_counts <- summarizeOverlaps(features=tbx5,reads=hetsread2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 	tbx5_minus2 <- assay(tbx_counts)
 	qplot(1:length(tbx5_minus2),tbx5_minus2)
-	qplot(1:length(tbx5_minus2),tbx5_plus2)
+	qplot(1:length(tbx5_minus2),tbx5_plus2) 
 	
 	tbx5b <- GRanges(seqnames="chr5",ranges=IRanges(start=seq(22643860,22672660,by=50),end=seq(22643910,22672710,by=50)),strand="+")
 	tbx_counts <- summarizeOverlaps(features=tbx5b,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
