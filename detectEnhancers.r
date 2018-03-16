@@ -142,9 +142,29 @@ detectEnhancers{
 	colnames(switchFPKM) <- c("chr","start","width","counts")
 	switchFPKM <- mutate(switchFPKM,fpkm = counts/(hets1frag*width))
 	
+	#TODO 3/15
 	file <- '/auto/cmb-00/rr/engie/RNA/merged1_nobookend.bed'
 	bed1nb <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
 	bed1nbR <- GRanges(seqnames=bed1nb$V1,ranges=IRanges(start=bed1nb$V2, end=bed1nb$V3),strand=bed1nb$V4)
+	counts <- summarizeOverlaps(features=bed1nbR,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	nbread_counts <- assay(counts) 
+	FPKMnb <- data.frame(seqnames(bed1nbR),start(bed1nbR),width(bed1nbR),nbread_counts)
+	colnames(FPKMnb) <- c("chr","start","width","counts")
+	FPKMnb <- mutate(FPKMnb,fpkm = counts/(hets1frag*width))
+	thresh <- filter(FPKMnb,fpkm>1)
+	zeroes <- which(FPKM$fpkm==0)
+	switch <- bed1nbR[zeroes]
+	anti <- strand(switch)
+	#length(which(strand(anti)=="*"))
+	anti[anti=="+"] <- "*"
+	anti[anti=="-"] <- "+"
+	anti[anti=="*"] <- "-"
+	strand(switch) <- anti
+	testcounts <- summarizeOverlaps(features=switch,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+	test_counts <- assay(testcounts) 
+	switchFPKMnb <- data.frame(seqnames(switch),start(switch),width(switch),test_counts)
+	colnames(switchFPKMnb) <- c("chr","start","width","counts")
+	switchFPKMnb <- mutate(switchFPKMnb,fpkm = counts/(hets1frag*width))
 	
 	file <- '/auto/cmb-00/rr/engie/RNA/merged2.bed'
 	bed2 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
