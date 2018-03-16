@@ -1,14 +1,15 @@
 ### detectEnhancers.R
 ###
-### Purpose: Take RNA-seq data and output locations and FPKMs of regions with bidirectional reads within a given region 
+### Purpose: Load RNA-seq data, output locations and FPKMs of regions with bidirectional reads within a given region 
 ###
 ###
 ### Written by Liana Engie
-### Last updated: April 2017
+### Last updated: March 2018
 ###
 ### detectEnhancers(chromosome, input_start, input_end,strand)
-### Input: string chromosome number, 
+### Input: string chromosome number, int input_start, int input_end, string strand (either "+" or "-")
 ### Output:
+
 library(Rsamtools)
 library(GenomicAlignments)
 library(GenomicFeatures)
@@ -90,24 +91,30 @@ detectEnhancers{
 		TPM %>% mutate(sense = sense/scaling_factor) %>% mutate(antisense=antisense/scaling_factor)		
 	}
 
+	### Actual start of the program
 	hets1 <- "/auto/cmb-00/rr/engie/RNA/hets1.bam" 
 	hets2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam"
+	
+	#Number of clusters in RNA-seq data, in millions
 	hets1frag <- 50.731011 
 	hets2frag <- 56.315336 
 	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
 	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
 	hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
-	#Will use gtf file later for validation, but calc scaling factor with merge  
+	
+	#Will use gtf file to ID nc regions later for validation, but calc scaling factor with merge  
 	#g <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz10.87.chr.gtf" 
 	#txdb <- makeTxDbFromGFF(g, format="gtf",circ_seqs = character())
 	#sequence <- seqlevels(txdb)
 	#new <- mapSeqlevels(sequence,"UCSC")
 	#new <- new[complete.cases(new)]
 	#txdb <- renameSeqlevels(txdb,new)
+	
+	#bam file merged with bookends, else '/auto/cmb-00/rr/engie/RNA/merged1_nobookend.bed'
 	file <- '/auto/cmb-00/rr/engie/RNA/merged1.bed'
 	bed1 <- fread(file,fill=TRUE,verbose=TRUE,data.table=FALSE) 
 	bed1R <- GRanges(seqnames=bed1$V1,ranges=IRanges(start=bed1$V2, end=bed1$V3),strand=bed1$V4)
-	#FPKM1 <- FPKM(bed1R,hetsread1,hets1frag) 
+	#FPKM1 <- FPKMCalc(bed1R,hetsread1,hets1frag) 
 	
 	#FPKM for all merged regions:
 	counts <- summarizeOverlaps(features=bed1R,reads=hetsread1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
