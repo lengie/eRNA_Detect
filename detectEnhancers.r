@@ -4,7 +4,7 @@
 ###
 ###
 ### Written by Liana Engie
-### Last updated: March 2018
+### Last updated: September 2018
 ###
 ### detectEnhancers(chromosome, input_start, input_end,strand)
 ### Input: string chromosome number, int input_start, int input_end, string strand (either "+" or "-")
@@ -102,6 +102,18 @@ detectEnhancers{
 	hetsread1 <- readGAlignmentPairs(hets1,param=ScanBamParam(flag=flag))
 	hetsread2 <- readGAlignmentPairs(hets2,param=ScanBamParam(flag=flag))
 	
+	#separate by strand and merge overlaps
+	byStrand <- split(ranges(hetsread1), as.factor(strand(hetsread1)))
+	export.bed(byStrand[[1]],name="Hets1PosStrand")
+	export.bed(byStrand[[2]],name="Hets1NegStrand")
+	pos1 <- as.data.frame(byStrand[[1]])
+	neg1 <- as.data.frame(byStrand[[2]])
+	write.csv(pos1,file="Hets1PosStrand")
+	write.csv(neg1,file="Hets1NegStrand")
+	rm(hetsread1)
+	compared <- mergeByOverlaps(byStrand[[1]],byStrand[[2]])
+	
+	
 	#Will use gtf file to ID nc regions later for validation, but calc scaling factor with merge  
 	#g <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz10.87.chr.gtf" 
 	#txdb <- makeTxDbFromGFF(g, format="gtf",circ_seqs = character())
@@ -109,6 +121,8 @@ detectEnhancers{
 	#new <- mapSeqlevels(sequence,"UCSC")
 	#new <- new[complete.cases(new)]
 	#txdb <- renameSeqlevels(txdb,new)
+	#STILL NEED TO PULL OUT NON CODING REGIONS FROM GTF
+	#negative rather than a category itself
 	
 	#bam file merged with bookends, else '/auto/cmb-00/rr/engie/RNA/merged1_nobookend.bed'
 	file <- '/auto/cmb-00/rr/engie/RNA/merged1.bed'
@@ -256,6 +270,10 @@ detectEnhancers{
 	#[1] 402954.9
 	hets2_mm <- mutate(hets2_mm, TPM = Counts/scaling2)
 	write.table(hets2_mm,file="hets2_mm_FPKMTPM.csv",row.names=FALSE) 
+	
+	
+	
+
 	
 	#brute force test on chr 21 RAI14-RXFP3
 	rai <- GRanges(seqnames="chr21",ranges=IRanges(start=seq(19492351,19497301,by=50),end=seq(19492401,19497351,by=50)),strand="-")
