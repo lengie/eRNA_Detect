@@ -90,6 +90,16 @@ detectEnhancers{
 		colnames(TPM) <- c("chr","start","width","sense","antisense")
 		TPM %>% mutate(sense = sense/scaling_factor) %>% mutate(antisense=antisense/scaling_factor)		
 	}
+	
+	overlap <- byChrOverlap(mergedbedchrsplit){
+		#input a merged bed file that has been factored by chromosome
+		overlap <- data.frame()
+		for(i=1:length(mergedbedchrsplit)){
+			byStrandTemp <- split(ranges(mergedbedchrsplit$i),by.strand(mergedbedchrsplit$i))
+			compare <- mergeByOverlaps(byStrandTemp[[1]],byStrandTemp[[2]])
+			overlap <- data.frame(overlap,compare)
+		}
+	}
 
 	### Actual start of the program
 	hets1 <- "/auto/cmb-00/rr/engie/RNA/hets1.bam" 
