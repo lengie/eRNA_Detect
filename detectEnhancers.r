@@ -95,12 +95,13 @@ detectEnhancers{
 		#input a merged bed file that has been factored by chromosome
 		overlap <- data.frame()
 		for(i=1:length(mergedbedchrsplit)){
-			byStrandTemp <- split(mergedbedchrsplit[i],strand(mergedbedchrsplit[i]))
-			compare <- mergeByOverlaps(ranges(byStrandTemp[[1]]),ranges(byStrandTemp[[2]]))
-			compare <- as.data.frame(compare)
+			byStrandTemp <- unlist(mergedbedchrsplit[i])
+			strandSplit <- split(byStrandTemp,strand(byStrandTemp))
+			compare <- mergeByOverlaps(ranges(strandSplit[[1]]),ranges(strandSplit[[2]]))
 			compare <- cbind(rep(as.character(names(mergeSplit)[i]),length(compare)),compare)
-			overlap <- data.frame(overlap,compare)
+			overlap <- rbind(overlap,compare)
 		}
+		colnames(overlap) <- c('Chr','PlusStrand','MinusStrand')
 	}
 
 	### Actual start of the program
