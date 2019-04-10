@@ -27,16 +27,16 @@ bidirncRNAwGTF{
                             format="gtf",
                             circ_seqs = character()
                            )
+    seqlevelsStyle(txdb) <- "UCSC"
 	coding <- cds(txdb)
-	#class(coding)
 
 	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
     bamread <- readGAlignmentPairs(bamfile,
                                    param=ScanBamParam(flag=flag)
                                   )
-    #class(bamread)
+    bamread <- granges(bamread)
 	
-	ncbam <- setdiff(bamread,coding,
+	ncbam <- GenomicRanges::setdiff(bamread,coding,
                      ignore.strand=FALSE)
 	#ignoring for now the * strand reads
     #ncbam then creates a list of bamread that does not include any regions in coding
