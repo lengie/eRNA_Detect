@@ -54,7 +54,7 @@ bidirncRNAwGTF{
 	justchr <- subset(justchr,containschr==TRUE)	
 	remCol <- justchr[,containschr:=NULL]#write.table(remCol,file="noncodingHets1ONLYCHR.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 	#mergedchronly <- bedr.merge.region(remCol,verbose=FALSE)
-	outsidemerged <- fread()
-	
+	outsidemerged <- fread("noncodingCHRONLY_mergedhets1.bed",data.table=TRUE,fill=TRUE)
+	colnames(outsidemerged) <- c("chr","start","end")
 }
 
