@@ -38,15 +38,23 @@ bidirncRNAwGTF{
 	
 	ncbam <- GenomicRanges::setdiff(bamread,coding,
                      ignore.strand=FALSE)
-	#ignoring for now the * strand reads
+	#ignoring for now the * strand reads         
     #ncbam then creates a list of bamread that does not include any regions in coding
     
-    ncbed <- data.table(chr <- as.character(seqnames(ncbam)),
-                        start <- start(ncbam)-1,
+    ncbed <- data.frame(chr <- as.character(seqnames(ncbam)),
+                        start <- as.integer(start(ncbam)-1),
                         end <- end(ncbam),
                         strand <- strand(ncbam)
                        )
-
-    
+    ncbed <- data.table(ncbed)
+	colnames(ncbed) <- c("chr","start","end","strand")	#write.table(ncbed,file="noncodingHets1.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+	#merged <- bedr.merge.region(ncbed,verbose=FALSE)
+	containschr <- grepl("chr",chr)
+	justchr <- cbind(containschr,ncbed)
+	justchr <- subset(justchr,containschr==TRUE)	
+	remCol <- justchr[,containschr:=NULL]#write.table(remCol,file="noncodingHets1ONLYCHR.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+	#mergedchronly <- bedr.merge.region(remCol,verbose=FALSE)
+	outsidemerged <- fread()
+	
 }
 
