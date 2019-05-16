@@ -22,6 +22,8 @@ bamfile <- "/auto/cmb-00/rr/engie/RNA/hets1.bam"
 gtffile <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz11.96.gtf" 
 fragno <- 50.731011 
 
+bamfile <- "/auto/cmb-00/rr/engie/RNA/hets2.bam" 
+
 bidirncRNAwGTF{
     txdb <- makeTxDbFromGFF(gtffile,
                             format="gtf",
@@ -54,7 +56,17 @@ bidirncRNAwGTF{
 	justchr <- subset(justchr,containschr==TRUE)	
 	remCol <- justchr[,containschr:=NULL]#write.table(remCol,file="noncodingHets1ONLYCHR.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 	#mergedchronly <- bedr.merge.region(remCol,verbose=FALSE)
-	outsidemerged <- fread("noncodingCHRONLY_mergedhets1.bed",data.table=TRUE,fill=TRUE)
+	
+    ## Finish merging in terminal
+    
+    outsidemerged <- fread("noncodingCHRONLY_mergedhets1.bed",data.table=TRUE,fill=TRUE)
 	colnames(outsidemerged) <- c("chr","start","end")
+    feat <- GRanges(seqnames=outsidemerged$chr,ranges=IRanges(start=outsidemerged$start,end=outsidemerged$end),ignore.strand=TRUE)
+    bidir_read <- summarizeOverlaps(features=feat,reads=bamread,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
+    bidir_read_counts <- assay(bidir_read)
+    outsidemerged <- cbind(outsidemerged,bidir_read_counts)
+    outsidemerged <- mutate(outsidemerged, size = end-start)
+    write.table(outsidemerged,file="ct711aHets1BidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
 }
 
