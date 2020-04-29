@@ -1,0 +1,65 @@
+## Example of aligning RNA-seq reads to GRCz11 zebrafish genome build
+## Intended as demonstration for Fraser Lab 2020
+
+# Log into HPC
+
+# Install STAR in your directory for software packages, make, compile, make sure it's in your path so you can access it anywhere
+
+wget https://github.com/alexdobin/STAR/archive/2.7.3a.tar.gz
+tar -xzf 2.7.3a.tar.gz
+cd STAR-2.7.3a
+cd STAR/source
+make STAR
+
+# Change directories to wherever you're going to run the job and keep your files
+# Best if you do all the file transfers in hpc-transfer.usc.edu
+
+wget "ftp://ftp.ensembl.org/pub/release-99/gtf/danio_rerio/Danio_rerio.GRCz11.99.gtf.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/gtf/danio_rerio/Danio_rerio.GRCz11.99.chr.gtf.gz"
+gzip -d Danio_rerio.GRCz11.99.gtf.gz
+gzip -d Danio_rerio.GRCz11.99.chr.gtf.gz
+
+#made another directory for the genome index
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.1.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.10.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.11.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.12.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.12.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.13.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.14.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.15.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.16.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.17.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.18.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.19.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.20.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.21.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.2.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.22.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.23.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.24.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.25.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.3.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.4.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.5.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.6.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.7.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.8.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.chromosome.9.fa.gz"
+wget "ftp://ftp.ensembl.org/pub/release-99/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.nonchromosomal.fa.gz"
+gzip -d *.gz
+#left out masked, mitochondrial DNA
+
+# Start an interactive job, requesting the number of nodes and amount of memory per node. Also time and if you have a specific set of nodes in mind
+
+salloc --ntasks=5 --mem=150000mb --time=3:00:00 --partition=cmb
+
+# Generate the genome index
+
+STAR --runThreadN 5 --runMode genomeGenerate --genomeDir GRCz11GenDir/ --genomeFastaFiles RefGenGRCz11/* --readFilesIn Raw/ --sjdbGTFfile Danio_rerio.GRCz11.99.chr.gtf --sjdbOverhang 100
+
+# Use the genome index to do any aligning you have to do
+
+STAR --runThreadN 3 --genomeDir /auto/cmb-00/rr/engie/GRCz11GenDir/ --readFilesIn RawRNASeq/ct711a_150804/ct711a_hets_nuc1_R_1.fastq RawRNASeq/ct711a_150804/ct711a_hets_nuc1_R_2.fastq --outSAMtype BAM SortedByCoordinate
+
+STAR --runThreadN 5 --genomeDir /auto/cmb-00/rr/engie/GRCz11GenDir/ --readFilesIn /panfs/qcb-panasas/engie/RawRNASeq/ct711a_150804/ct711a_hets_nuc2_R_1.fastq /panfs/qcb-panasas/engie/RawRNASeq/ct711a_150804/ct711a_hets_nuc2_R_2.fastq --outSAMtype BAM SortedByCoordinate   
