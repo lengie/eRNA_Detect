@@ -56,10 +56,10 @@ salloc --ntasks=5 --mem=150000mb --time=3:00:00 --partition=cmb
 
 # Generate the genome index
 
-STAR --runThreadN 5 --runMode genomeGenerate --genomeDir GRCz11GenDir/ --genomeFastaFiles RefGenGRCz11/* --readFilesIn Raw/ --sjdbGTFfile Danio_rerio.GRCz11.99.chr.gtf --sjdbOverhang 100
+STAR --runThreadN 5 --runMode genomeGenerate --genomeDir made/a/folder/called/GRCz11GenDir/ --genomeFastaFiles FastaFolder/* --readFilesIn where/I/want/the/files/to/go --sjdbGTFfile Danio_rerio.GRCz11.99.chr.gtf --sjdbOverhang 100
 
 # Use the genome index to do any aligning you have to do
 
-STAR --runThreadN 3 --genomeDir /auto/cmb-00/rr/engie/GRCz11GenDir/ --readFilesIn RawRNASeq/ct711a_150804/ct711a_hets_nuc1_R_1.fastq RawRNASeq/ct711a_150804/ct711a_hets_nuc1_R_2.fastq --outSAMtype BAM SortedByCoordinate
+STAR --runThreadN 3 --genomeDir /here/is/my/GRCz11GenDir/ --readFilesIn RawRNASeq/R_1.fastq RawRNASeq/R_2.fastq --outSAMtype BAM SortedByCoordinate
 
 STAR --runThreadN 5 --genomeDir /auto/cmb-00/rr/engie/GRCz11GenDir/ --readFilesIn /panfs/qcb-panasas/engie/RawRNASeq/ct711a_150804/ct711a_hets_nuc2_R_1.fastq /panfs/qcb-panasas/engie/RawRNASeq/ct711a_150804/ct711a_hets_nuc2_R_2.fastq --outSAMtype BAM SortedByCoordinate   
