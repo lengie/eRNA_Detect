@@ -11,6 +11,13 @@ cd STAR-2.7.3a
 cd STAR/source
 make STAR
 
+# Make sure it's in your PATH so the HPC can find where you've put your software. I recommend changing your .bashrc or .bash_profile files. If you have no idea what I'm talking about you can do this:
+PATH=/staging/le/vnthomas/STAR/:$PATH
+# If you're using other software this will clear your PATH. Basically it's only looking at this location, so if you're using other things, make sure they're all in the path. Another example
+PATH=/sbin:/usr/sbin:/usr/usc/bin:/auto/cmb-00/rr/engie/software/sratoolkit.2.8.2-1-centos_linux64/bin/:/auto/cmb-00/rr/engie/software/UCSC:/auto/cmb-00/rr/engie/software/subread-1.5.2-Linux-x86_64/bin:/auto/cmb-00/rr/engie/software/jdk1.8.0_131/bin/:/auto/cmb-00/rr/engie/software/sratoolkit.2.8.2-1-centos_linux64:/auto/cmb-00/rr/engie/software/STAR-2.5.3a/bin/Linux_x86_64_static:/auto/cmb-00/rr/engie/software/vcftools-vcftools-581c231/bin:$PATH
+
+export PATH
+
 # Change directories to wherever you're going to run the job and keep your files
 # Best if you do all the file transfers in hpc-transfer.usc.edu
 
