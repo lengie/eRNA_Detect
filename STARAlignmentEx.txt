@@ -18,6 +18,9 @@ PATH=/sbin:/usr/sbin:/usr/usc/bin:/auto/cmb-00/rr/engie/software/sratoolkit.2.8.
 
 export PATH
 
+# test to make sure it's registering
+which STAR
+
 # Change directories to wherever you're going to run the job and keep your files
 # Best if you do all the file transfers in hpc-transfer.usc.edu
 
