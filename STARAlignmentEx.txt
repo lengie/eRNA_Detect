@@ -66,7 +66,7 @@ salloc --ntasks=5 --mem=150000mb --time=3:00:00 --partition=cmb
 
 # Generate the genome index
 
-STAR --runThreadN 5 --runMode genomeGenerate --genomeDir made/a/folder/called/GRCz11GenDir/ --genomeFastaFiles FastaFolder/* --readFilesIn where/I/want/the/files/to/go --sjdbGTFfile Danio_rerio.GRCz11.99.chr.gtf --sjdbOverhang 100
+STAR --runThreadN 5 --runMode genomeGenerate --genomeDir made/a/folder/called/GRCz11GenDir/ --genomeFastaFiles FastaFolder/* --sjdbGTFfile Danio_rerio.GRCz11.99.chr.gtf --sjdbOverhang 100
 
 # Use the genome index to do any aligning you have to do
 
