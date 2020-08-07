@@ -73,3 +73,8 @@ STAR --runThreadN 5 --runMode genomeGenerate --genomeDir made/a/folder/called/GR
 STAR --runThreadN 3 --genomeDir /here/is/my/GRCz11GenDir/ --readFilesIn RawRNASeq/R_1.fastq RawRNASeq/R_2.fastq --outSAMtype BAM SortedByCoordinate
 
 STAR --runThreadN 5 --genomeDir /auto/cmb-00/rr/engie/GRCz11GenDir/ --readFilesIn /panfs/qcb-panasas/engie/RawRNASeq/ct711a_150804/ct711a_hets_nuc2_R_1.fastq /panfs/qcb-panasas/engie/RawRNASeq/ct711a_150804/ct711a_hets_nuc2_R_2.fastq --outSAMtype BAM SortedByCoordinate   
+
+# Note: if there are multiple lanes in your RNA sequencing, you will get multiple files as an output. Say, for example, we have 4 lanes, paired end reads at 2x75. Then you list the R1 or R2 files in a group separated by commas, and input those two separated by a space bar:
+
+STAR --runThreadN 6 --genomeDir /auto/cmb-00/rr/engie/GRCz11GenDir/ --readFilesIn 27_S13_L001_R1_001.fastq,27_S13_L002_R1_001.fastq,27_S13_L003_R1_001.fastq,27_S13_L004_R1_001.fastq
+27_S13_L001_R2_001.fastq,27_S13_L002_R2_001.fastq,27_S13_L003_R2_001.fastq,27_S13_L004_R2_001.fastq --outSAMtype BAM SortedByCoordinate
