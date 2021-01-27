@@ -3,12 +3,14 @@
 
 # Investigating the statistical distribution of nuclear RNA reads
 # Uses sox10 nuclear RNA pulled from Trinh et al 2017 Biotagging paper: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE89670
+# Loads the data, combines both strands into single GRanges object, loads annotations, makes count tables
 
-library(Rsamtools)
 library(data.table)
 library(dplyr)
 library(GenomicRanges)
 library(rtracklayer)
+library(GenomicFeatures)
+library(GenomicAlignments)
 
 # if using bedgraphs
 sox10_nuc1minusfile <- "sox10nuc_minus1.bedGraph"
@@ -47,3 +49,36 @@ strand(sox10_nuc2plus) <- "+"
 strand(sox10_nuc1plus) <- "+"
 
 # combining into GRangesLists
+grl <- GRangesList(sox10_nuc1minus,sox10_nuc1plus)
+grl2 <- GRangesList(sox10_nuc2minus,sox10_nuc2plus)
+
+# turn the GRangesLists into GRanges
+sox10_nuc1 <- unlist(grl)
+sox10_nuc2 <- unlist(grl2)
+
+# retrieve the annotations to generate count tables
+gtffile <- "/panfs/qcb-panasas/engie/GRCz11EnhDet/Danio_rerio.GRCz11.99.gtf"
+txdb <- makeTxDbFromGFF(gtffile,
+                        format="gtf",
+                        circ_seqs = character()
+                        )
+seqlevelsStyle(txdb) <- "UCSC"
+transcripts <- transcripts(txdb)
+exons <- exons(txdb)
+
+# trying to use the zebrafish ncRNA database
+lncfile <- "/panfs/qcb-panasas/engie/NCReadDist/ZFLNC_lncRNA.gtf"	
+lncRNA <- makeTxDbFromGFF(gtffile,
+                          format="gtf",
+                          circ_seqs = character()
+                          )
+
+# generating read count tables
+exoncounts1 <- summarizeOverlaps(features=exons,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+exoncounts2 <- summarizeOverlaps(features=exons,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+
+nccounts1 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+nccounts2 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
+ 
+txcounts1 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+txcounts2 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
