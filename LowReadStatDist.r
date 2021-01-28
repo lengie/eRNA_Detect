@@ -68,17 +68,20 @@ exons <- exons(txdb)
 
 # trying to use the zebrafish ncRNA database
 lncfile <- "/panfs/qcb-panasas/engie/NCReadDist/ZFLNC_lncRNA.gtf"	
-lncRNA <- makeTxDbFromGFF(gtffile,
-                          format="gtf",
-                          circ_seqs = character()
-                          )
+lncRNA <- rtracklayer::import(lncfile) # will not load as a TxDb file
 
 # generating read count tables
 exoncounts1 <- summarizeOverlaps(features=exons,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 exoncounts2 <- summarizeOverlaps(features=exons,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+exoncounts1tb <- assay(exoncounts1)
+exoncounts2tb <- assay(exoncounts2)
 
 nccounts1 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 nccounts2 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
- 
+nccounts1tb <- assay(nccounts1)
+nccounts2tb <- assay(nccounts2)
+
 txcounts1 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 txcounts2 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
+txcounts1tb <- assay(txcounts1)
+txcounts2tb <- assay(txcounts2)
