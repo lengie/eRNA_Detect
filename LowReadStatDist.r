@@ -48,13 +48,18 @@ strand(sox10_nuc2minus) <- "-"
 strand(sox10_nuc2plus) <- "+"
 strand(sox10_nuc1plus) <- "+"
 
+polyAplus <- import("GSM2386493_Sox10_Ribo_plus.sort.bam.bg.bw",format="BigWig")
+polyAminus <- import("GSM2386493_Sox10_Ribo_minus.sort.bam.bg.bw",format="BigWig")  
+
 # combining into GRangesLists
 grl <- GRangesList(sox10_nuc1minus,sox10_nuc1plus)
 grl2 <- GRangesList(sox10_nuc2minus,sox10_nuc2plus)
+grA <- GRangesList(polyAplus,polyAminus)
 
 # turn the GRangesLists into GRanges
 sox10_nuc1 <- unlist(grl)
 sox10_nuc2 <- unlist(grl2)
+polyA <- unlist(grA)
 
 # retrieve the annotations to generate count tables
 gtffile <- "/panfs/qcb-panasas/engie/GRCz11EnhDet/Danio_rerio.GRCz11.99.gtf"
@@ -85,3 +90,12 @@ txcounts1 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc1,singleEnd=F
 txcounts2 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
 txcounts1tb <- assay(txcounts1)
 txcounts2tb <- assay(txcounts2)
+
+exonA <- summarizeOverlaps(features=exons,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+exonAtb <- assay(exonA)
+
+ncA <- summarizeOverlaps(features=lncRNA,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+ncAtb <- assay(ncA)
+
+txA <- summarizeOverlaps(features=transcripts,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+txAtb <- assay(txA)
