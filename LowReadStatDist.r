@@ -108,15 +108,37 @@ row.names(colData) <- c("sox10nuc1","sox10nuc2","sox10polyA")
 colData$cond <- factor(colData$cond)
 
 # exons
-exoncounts <- data.frame(one = nuc1exon,
-                        two = nuc2exon,
-                        poly = exonAtb)
+exoncounts <- data.frame(one = exoncounts1tb,
+                         two = exoncounts2tb,
+                         poly = exonAtb)
 
 dds <- DESeqDataSetFromMatrix(countData = exoncounts,
                               colData = colData,
                               design = ~ cond)
 dds <- DESeq(dds)
+norm <- assays(dds)
+normtb <- norm[[1]]
 
 #transcripts
+txcounts <- data.frame(one = txcounts1tb,
+                       two = txcounts2tb,
+                       poly = txAtb)
+
+ddstx <- DESeqDataSetFromMatrix(countData = txcounts,
+                              colData = colData,
+                              design = ~ cond)
+ddstx <- DESeq(ddstx)
+normtx <- assays(ddstx)
+normtxtb <- normtx[[1]]
 
 #lncRNAs
+lnccounts <- data.frame(one = nccounts1tb,
+                        two = nccounts2tb,
+                        poly = ncAtb)
+
+ddsnc <- DESeqDataSetFromMatrix(countData = lnccounts,
+                              colData = colData,
+                              design = ~ cond)
+ddsnc <- DESeq(ddsnc)
+normnc <- assays(ddsnc)
+normnctb <- normnc[[1]]
