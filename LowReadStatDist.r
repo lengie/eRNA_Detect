@@ -5,12 +5,13 @@
 # Uses sox10 nuclear RNA pulled from Trinh et al 2017 Biotagging paper: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE89670
 # Loads the data, combines both strands into single GRanges object, loads annotations, makes count tables
 
-library(data.table)
-library(dplyr)
 library(GenomicRanges)
 library(rtracklayer)
 library(GenomicFeatures)
 library(GenomicAlignments)
+library(data.table)
+library(dplyr)
+library(DEseq2)
 
 # if using bedgraphs
 sox10_nuc1minusfile <- "sox10nuc_minus1.bedGraph"
@@ -99,3 +100,23 @@ ncAtb <- assay(ncA)
 
 txA <- summarizeOverlaps(features=transcripts,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
 txAtb <- assay(txA)
+
+## DESeq Analysis for each type of data
+cond <- c("nuc","nuc","polyA")
+colData <- data.frame(cond=cond) 
+row.names(colData) <- c("sox10nuc1","sox10nuc2","sox10polyA")
+colData$cond <- factor(colData$cond)
+
+# exons
+exoncounts <- data.frame(one = nuc1exon,
+                        two = nuc2exon,
+                        poly = exonAtb)
+
+dds <- DESeqDataSetFromMatrix(countData = exoncounts,
+                              colData = colData,
+                              design = ~ cond)
+dds <- DESeq(dds)
+
+#transcripts
+
+#lncRNAs
