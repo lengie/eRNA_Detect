@@ -12,6 +12,7 @@ library(GenomicAlignments)
 library(data.table)
 library(dplyr)
 library(DEseq2)
+library(ggplot2)
 
 # if using bedgraphs
 sox10_nuc1minusfile <- "sox10nuc_minus1.bedGraph"
@@ -142,3 +143,17 @@ ddsnc <- DESeqDataSetFromMatrix(countData = lnccounts,
 ddsnc <- DESeq(ddsnc)
 normnc <- assays(ddsnc)
 normnctb <- normnc[[1]]
+
+# plots
+exon1 <- ggplot(data=normtb, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 exon read counts") + ylim(0,30000)
+exon2 <- ggplot(data=normtb, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 exon read counts") + ylim(0,30000)
+exonA <- ggplot(data=normtb, aes(x=sox10polyA)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 polyA exon read counts") + ylim(0,30000)
+
+tx1 <- ggplot(data=normtxtb, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 transcript read counts") + ylim(0,30000)
+tx2 <- ggplot(data=normtxtb, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 transcript read counts") + ylim(0,30000)
+txA <- ggplot(data=normtxtb, aes(x=sox10polyA)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 polyA  read counts") + ylim(0,30000)
+
+lnc1 <- ggplot(data=normnctb, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 exon read counts") + ylim(0,30000)
+lnc2 <- ggplot(data=normnctb, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 exon read counts") + ylim(0,30000)
+lncA <- ggplot(data=normnctb, aes(x=sox10polyA)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 polyA exon read counts") + ylim(0,30000)
+
