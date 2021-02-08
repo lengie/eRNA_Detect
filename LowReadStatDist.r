@@ -150,9 +150,9 @@ txNorm <- as.data.frame(normtxtb)
 lncNorm <- as.data.frame(normnctb)
 
 #comparing statistical distributions
-exon.norm.params <- fitdistr(exonNorm$V1,"normal")$estimate
-exon.poisson.params <- fitdistr(exonNorm$V1,"poisson")$estimate
-exon.negbinom.params <- fitdistr(exonNorm$V1,"negative binomial", lower=c(0,0), method = "SANN")$estimate
+exon.norm.params <- fitdistr(exonNorm$sox10nuc1,"normal")$estimate
+exon.poisson.params <- fitdistr(exonNorm$sox10nuc1,"poisson")$estimate
+exon.negbinom.params <- fitdistr(exonNorm$sox10nuc1,"negative binomial", lower=c(0,0), method = "SANN")$estimate
 exon.dist.params <- map(list(Normal = exon.norm.params,Poisson = exon.poisson.params,`Negative Binomial` = exon.negbinom.params),
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
@@ -171,44 +171,44 @@ exonA.dist.params <- map(list(Normal = exonA.norm.params,Poisson = exonA.poisson
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
 
-tx.norm.params <- fitdistr(txNorm$V1,"normal")$estimate
-tx.poisson.params <- fitdistr(txNorm$V1,"poisson")$estimate
-tx.negbinom.params <- fitdistr(txNorm$V1,"negative binomial", lower=c(0,0), method = "SANN")$estimate
+tx.norm.params <- fitdistr(txNorm$sox10nuc1,"normal")$estimate
+tx.poisson.params <- fitdistr(txNorm$sox10nuc1,"poisson")$estimate
+tx.negbinom.params <- fitdistr(txNorm$sox10nuc1,"negative binomial", lower=c(0,0), method = "SANN")$estimate
 tx.dist.params <- map(list(Normal = tx.norm.params,Poisson = tx.poisson.params,`Negative Binomial` = tx.negbinom.params),
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
 
-tx2.norm.params <- fitdistr(txNorm$V2,"normal")$estimate
-tx2.poisson.params <- fitdistr(txNorm$V2,"poisson")$estimate
-tx2.negbinom.params <- fitdistr(txNorm$V2,"negative binomial", lower=c(0,0), method = "SANN")$estimate
+tx2.norm.params <- fitdistr(txNorm$sox10nuc2,"normal")$estimate
+tx2.poisson.params <- fitdistr(txNorm$sox10nuc2,"poisson")$estimate
+tx2.negbinom.params <- fitdistr(txNorm$sox10nuc2,"negative binomial", lower=c(0,0), method = "SANN")$estimate
 tx2.dist.params <- map(list(Normal = tx2.norm.params,Poisson = tx2.poisson.params,`Negative Binomial` = tx2.negbinom.params),
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
 
-txA.norm.params <- fitdistr(txNorm$V3,"normal")$estimate
-txA.poisson.params <- fitdistr(txNorm$V3,"poisson")$estimate
-txA.negbinom.params <- fitdistr(txNorm$V3,"negative binomial", lower=c(0,0), method = "SANN")$estimate
+txA.norm.params <- fitdistr(txNorm$sox10polyA,"normal")$estimate
+txA.poisson.params <- fitdistr(txNorm$sox10polyA,"poisson")$estimate
+txA.negbinom.params <- fitdistr(txNorm$sox10polyA,"negative binomial", lower=c(0,0), method = "SANN")$estimate
 txA.dist.params <- map(list(Normal = txA.norm.params,Poisson = txA.poisson.params,`Negative Binomial` = txA.negbinom.params),
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
 
-nc.norm.params <- fitdistr(normnctb$V1,"normal")$estimate
-nc.poisson.params <- fitdistr(normnctb$V1,"poisson")$estimate
-nc.negbinom.params <- fitdistr(normnctb$V1,"negative binomial", lower=c(0,0), method = "SANN")$estimate
+nc.norm.params <- fitdistr(normnctb$sox10nuc2,"normal")$estimate
+nc.poisson.params <- fitdistr(normnctb$sox10nuc1,"poisson")$estimate
+nc.negbinom.params <- fitdistr(normnctb$sox10nuc1,"negative binomial", lower=c(0,0), method = "SANN")$estimate
 nc.dist.params <- map(list(Normal = nc.norm.params,Poisson = nc.poisson.params,`Negative Binomial` = nc.negbinom.params),
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
 
-nc2.norm.params <- fitdistr(normnctb$V2,"normal")$estimate
-nc2.poisson.params <- fitdistr(normnctb$V2,"poisson")$estimate
-nc2.negbinom.params <- fitdistr(normnctb$V2,"negative binomial", lower=c(0,0), method = "SANN")$estimate
+nc2.norm.params <- fitdistr(normnctb$sox10nuc2,"normal")$estimate
+nc2.poisson.params <- fitdistr(normnctb$sox10nuc2,"poisson")$estimate
+nc2.negbinom.params <- fitdistr(normnctb$sox10nuc2,"negative binomial", lower=c(0,0), method = "SANN")$estimate
 nc2.dist.params <- map(list(Normal = nc2.norm.params,Poisson = nc2.poisson.params,`Negative Binomial` = nc2.negbinom.params),
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
 
-ncA.norm.params <- fitdistr(normnctb$V3,"normal")$estimate
-ncA.poisson.params <- fitdistr(normnctb$V3,"poisson")$estimate
-ncA.negbinom.params <- fitdistr(normnctb$V3,"negative binomial", lower=c(0,0), method = "SANN")$estimate
+ncA.norm.params <- fitdistr(normnctb$sox10polyA,"normal")$estimate
+ncA.poisson.params <- fitdistr(normnctb$sox10polyA,"poisson")$estimate
+ncA.negbinom.params <- fitdistr(normnctb$sox10polyA,"negative binomial", lower=c(0,0), method = "SANN")$estimate
 ncA.dist.params <- map(list(Normal = ncA.norm.params,Poisson = ncA.poisson.params,`Negative Binomial` = ncA.negbinom.params),
     ~ map2(names(.),.,~ paste0(.x," = ",round(.y,2))) %>% unlist %>% paste0(.,collapse = ", ")) %>% 
     map2_chr(names(.),., ~ paste(.x,.y,sep=":\n"))
@@ -216,15 +216,90 @@ ncA.dist.params <- map(list(Normal = ncA.norm.params,Poisson = ncA.poisson.param
 # plots
 mybinwidth <- 1
 
-exon1 <- ggplot(data=exonNorm, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 exon read counts") + ylim(0,30000)
-exon2 <- ggplot(data=exonNorm, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 exon read counts") + ylim(0,30000)
-exonA <- ggplot(data=exonNorm, aes(x=sox10polyA)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 polyA exon read counts") + ylim(0,30000)
+exon1 <- ggplot(data=exonNorm, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 exon read counts") + ylim(0,30000)+
+            stat_function(aes(color = "black"),
+                          fun=function(x,mean,sd) mybinwidth * nrow(exonNorm) * dnorm(x,mean, sd),
+                          args=fitdistr(exonNorm$sox10polyA,"normal")$estimate) +
+            stat_function(aes(color = "blue"),
+                          fun=function(x,lambda) mybinwidth * nrow(exonNorm) * dpois(x,lambda),
+                          args=fitdistr(exonNorm$sox10polyA,"poisson")$estimate,
+                          xlim=c(1,100), n=100) + 
+            stat_function(aes(color = "orange"),
+                          fun=function(x,size, mu) mybinwidth * nrow(exonNorm) * dnbinom(x,size = size, mu = mu),
+                          args=fitdistr(exonNorm$sox10polyA,"negative binomial", method="SANN")$estimate,
+                          lower=c(0,0),n=100) + 
+            scale_color_manual("Distribution", 
+                                values=c(black="black",blue="blue",orange="orange"), labels=exon.dist.params)
+exon2 <- ggplot(data=exonNorm, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 exon read counts") + ylim(0,30000)+
+            stat_function(aes(color = "black"),
+                          fun=function(x,mean,sd) mybinwidth * nrow(exonNorm) * dnorm(x,mean, sd),
+                          args=fitdistr(exonNorm$sox10polyA,"normal")$estimate) +
+            stat_function(aes(color = "blue"),
+                          fun=function(x,lambda) mybinwidth * nrow(exonNorm) * dpois(x,lambda),
+                          args=fitdistr(exonNorm$sox10polyA,"poisson")$estimate,
+                          xlim=c(1,100), n=100) + 
+            stat_function(aes(color = "orange"),
+                          fun=function(x,size, mu) mybinwidth * nrow(exonNorm) * dnbinom(x,size = size, mu = mu),
+                          args=fitdistr(exonNorm$sox10polyA,"negative binomial", method="SANN")$estimate,
+                          lower=c(0,0),n=100) + 
+            scale_color_manual("Distribution", 
+                                values=c(black="black",blue="blue",orange="orange"), labels=exon2.dist.params)
+exonA <- ggplot(data=exonNorm, aes(x=sox10polyA)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 polyA exon read counts") + ylim(0,30000)+
+            stat_function(aes(color = "black"),
+                          fun=function(x,mean,sd) mybinwidth * nrow(exonNorm) * dnorm(x,mean, sd),
+                          args=fitdistr(exonNorm$sox10polyA,"normal")$estimate) +
+            stat_function(aes(color = "blue"),
+                          fun=function(x,lambda) mybinwidth * nrow(exonNorm) * dpois(x,lambda),
+                          args=fitdistr(exonNorm$sox10polyA,"poisson")$estimate,
+                          xlim=c(1,100), n=100) + 
+            stat_function(aes(color = "orange"),
+                          fun=function(x,size, mu) mybinwidth * nrow(exonNorm) * dnbinom(x,size = size, mu = mu),
+                          args=fitdistr(exonNorm$sox10polyA,"negative binomial", method="SANN")$estimate,
+                          lower=c(0,0),n=100) + 
+            scale_color_manual("Distribution", 
+                                values=c(black="black",blue="blue",orange="orange"), labels=exonA.dist.params)
 
-tx1 <- ggplot(data=txNorm, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 transcript read counts") + ylim(0,1500)
-tx2 <- ggplot(data=txNorm, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 transcript read counts") + ylim(0,1500)
-txA <- ggplot(data=txNorm, aes(x=sox10polyA)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 polyA  read counts") + ylim(0,1500)
+tx1 <- ggplot(data=txNorm, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,1000)+labs(x="sox10 nuc1 transcript read counts") + ylim(0,1000)+
+            stat_function(aes(color = "black"),
+                          fun=function(x,mean,sd) mybinwidth * nrow(txNorm) * dnorm(x,mean, sd),
+                          args=fitdistr(txNorm$sox10polyA,"normal")$estimate) +
+            stat_function(aes(color = "blue"),
+                          fun=function(x,lambda) mybinwidth * nrow(txNorm) * dpois(x,lambda),
+                          args=fitdistr(txNorm$sox10polyA,"poisson")$estimate,
+                          xlim=c(1,100), n=100) + 
+            stat_function(aes(color = "orange"),
+                          fun=function(x,size, mu) mybinwidth * nrow(txNorm) * dnbinom(x,size = size, mu = mu),
+                          args=fitdistr(txNorm$sox10polyA,"negative binomial", method="SANN")$estimate,
+                          lower=c(0,0),n=100) + 
+            scale_color_manual("Distribution", values=c(black="black",blue="blue",orange="orange"), labels=tx.dist.params)
+tx2 <- ggplot(data=txNorm, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,1000)+labs(x="sox10 nuc2 transcript read counts") + ylim(0,1000)+ 
+            stat_function(aes(color = "black"),
+                          fun=function(x,mean,sd) mybinwidth * nrow(txNorm) * dnorm(x,mean, sd),
+                          args=fitdistr(txNorm$sox10polyA,"normal")$estimate) +
+            stat_function(aes(color = "blue"),
+                          fun=function(x,lambda) mybinwidth * nrow(txNorm) * dpois(x,lambda),
+                          args=fitdistr(txNorm$sox10polyA,"poisson")$estimate,
+                          xlim=c(1,100), n=100) + 
+            stat_function(aes(color = "orange"),
+                          fun=function(x,size, mu) mybinwidth * nrow(txNorm) * dnbinom(x,size = size, mu = mu),
+                          args=fitdistr(txNorm$sox10polyA,"negative binomial", method="SANN")$estimate,
+                          lower=c(0,0),n=100) + 
+            scale_color_manual("Distribution", values=c(black="black",blue="blue",orange="orange"), labels=tx2.dist.params)
+txA <- ggplot(data=txNorm, aes(x=sox10polyA)) + geom_histogram(binwidth=1) + xlim(0,1000)+labs(x="sox10 polyA transcript read counts") + ylim(0,1000)+
+            stat_function(aes(color = "black"),
+                          fun=function(x,mean,sd) mybinwidth * nrow(txNorm) * dnorm(x,mean, sd),
+                          args=fitdistr(txNorm$sox10polyA,"normal")$estimate) +
+            stat_function(aes(color = "blue"),
+                          fun=function(x,lambda) mybinwidth * nrow(txNorm) * dpois(x,lambda),
+                          args=fitdistr(txNorm$sox10polyA,"poisson")$estimate,
+                          xlim=c(1,100), n=100) + 
+            stat_function(aes(color = "orange"),
+                          fun=function(x,size, mu) mybinwidth * nrow(txNorm) * dnbinom(x,size = size, mu = mu),
+                          args=fitdistr(txNorm$sox10polyA,"negative binomial", method="SANN")$estimate,
+                          lower=c(0,0),n=100) + 
+            scale_color_manual("Distribution",values=c(black="black",blue="blue",orange="orange"), labels=txA.dist.params)
 
-lnc1 <- ggplot(data=lncNorm, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 exon read counts") + ylim(0,9000)+
+lnc1 <- ggplot(data=lncNorm, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc1 lncNRA read counts") + ylim(0,9000)+
             stat_function(aes(color = "black"),
                           fun=function(x,mean,sd) mybinwidth * nrow(lncNorm) * dnorm(x,mean, sd),
                           args=fitdistr(lncNorm$sox10polyA,"normal")$estimate) +
@@ -238,7 +313,7 @@ lnc1 <- ggplot(data=lncNorm, aes(x=sox10nuc1)) + geom_histogram(binwidth=1) + xl
                           lower=c(0,0),n=100) + 
             scale_color_manual("Distribution", 
                                 values=c(black="black",blue="blue",orange="orange"), labels=ncA.dist.params)
-lnc2 <- ggplot(data=lncNorm, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 exon read counts") + ylim(0,9000)+
+lnc2 <- ggplot(data=lncNorm, aes(x=sox10nuc2)) + geom_histogram(binwidth=1) + xlim(0,100)+labs(x="sox10 nuc2 lncNRA read counts") + ylim(0,9000)+
             stat_function(aes(color = "black"),
                           fun=function(x,mean,sd) mybinwidth * nrow(lncNorm) * dnorm(x,mean, sd),
                           args=fitdistr(lncNorm$sox10polyA,"normal")$estimate) +
@@ -270,24 +345,24 @@ lncA <- ggplot(data=lncNorm, aes(x=sox10polyA)) + geom_histogram(binwidth=mybinw
 # perform chi-squared tests for goodness of fit of the distributions
 length <- nrow(exonNorm)-1
 fit <- dnbinom(0:length,size=0.2569002,mu=8.4660221)
-chisq.test(exonNorm$V1, p=fit)
+chisq.test(exonNorm$sox10nuc1, p=fit)
 fit <- dnbinom(0:length,size=0.1616598,mu=6.1709287)
-chisq.test(exonNorm$V2, p=fit)
+chisq.test(exonNorm$sox10nuc2, p=fit)
 fit <- dnbinom(0:length,size=0.0653513,mu=3.1287361)
-chisq.test(exonNorm$V3, p=fit)
+chisq.test(exonNorm$sox10polyA, p=fit)
 
 length <- nrow(txNorm)-1
-fit <- dnbinom(0:length,size=0.2568344,mu=8.4563691)
-chisq.test(txNorm$V1, p=fit)
-fit <- dnbinom(0:length,size=0.1617959,mu=6.1837367)
-chisq.test(txNorm$V2, p=fit)
-fit <- dnbinom(0:length,size=0.06555382,mu=3.14159576)
-chisq.test(txNorm$V3, p=fit)
+fit <- dnbinom(0:length,size=0.3650183,mu=728.9520676)
+chisq.test(txNorm$sox10nuc1, p=fit)
+fit <- dnbinom(0:length,size=0.3067151,mu=525.8956677)
+chisq.test(txNorm$sox10nuc2, p=fit)
+fit <- dnbinom(0:length,size=0.1818739,mu=264.9459049)
+chisq.test(txNorm$sox10polyA, p=fit)
 
 length <- nrow(lncNorm)-1
 fit <- dnbinom(0:length,size=0.1921967,mu=47.5004140)
-chisq.test(normnctb$V1, p=fit)
-chisq.test(normnctb$V2, p=fit)
+chisq.test(normnctb$sox10nuc1, p=fit)
+chisq.test(normnctb$sox10nuc2, p=fit)
 fit <- dnbinom(0:length, size=0.06592968, mu=42.50703446)
-chisq.test(normnctb$V3, p=fit)
+chisq.test(normnctb$sox10polyA, p=fit)
 
