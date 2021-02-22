@@ -1,0 +1,154 @@
+library(GenomicAlignments)
+library(GenomicFeatures)
+library(dplyr)
+library(data.table)
+
+flag <- scanBamFlag(isSecondaryAlignment=NA, isDuplicate=FALSE)
+homo1 <- readGAlignmentPairs("ct711a_150804_homo_nuc1PrimaryReads.bam",param=ScanBamParam(flag=flag))
+homo2 <- readGAlignmentPairs("ct711a_150804_homo_nuc2PrimaryReads.bam",param=ScanBamParam(flag=flag))
+hets1bam <-  readGAlignmentPairs("/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1DirecttobamSorted.bam",param=ScanBamParam(flag=flag))
+hets2bam <- readGAlignmentPairs("/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc2DirecttobamSorted.bam",param=ScanBamParam(flag=flag))
+ghomo1 <- GRanges(homo1)
+ghomo2 <- GRanges(homo2)
+ghets1 <- GRanges(hets1bam)
+ghets2 <- GRanges(hets2bam)
+seqlevelsStyle(ghomo1) <- "UCSC"
+seqlevelsStyle(ghomo2) <- "UCSC"
+seqlevelsStyle(ghets1) <- "UCSC"
+seqlevelsStyle(ghets2) <- "UCSC"
+
+gtffile <- "/panfs/qcb-panasas/engie/GRCz11EnhDet/Danio_rerio.GRCz11.99.gtf"
+txdb <- makeTxDbFromGFF(gtffile,
+                        format="gtf",
+                        circ_seqs = character()
+                        )
+seqlevelsStyle(txdb) <- "UCSC"
+coding <- cds(txdb)
+
+overlaps1 <- findOverlaps(ghomo1,coding,ignore.strand=FALSE)
+hits1 <- ghomo1[-queryHits(overlaps1),]
+underten1 <- hits1[width(hits1)<10000]
+ten1 <- hits1[width(hits1)>10000]
+write.table(ten1,file="ct711a_Homoz1PrimaryNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+overlaps2 <- findOverlaps(ghomo2,coding,ignore.strand=FALSE)
+hits2 <- ghomo2[-queryHits(overlaps2),]
+underten2 <- hits2[width(hits2)<10000]
+ten2 <- hits2[width(hits2)>10000]
+write.table(ten2,file="ct711a_Homoz2PrimaryNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+underten1df <- data.frame(chr = as.character(seqnames(underten1)),
+                    start = start(underten1)-1,
+                    end = end(underten1),
+                    name = "n/a",
+                    score = 0,
+                    strand = strand(underten1)
+                    )
+write.table(underten2df,file="ct711a_Homoz1PrimaryNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+underten2df <- data.frame(chr = as.character(seqnames(underten2)),
+                    start = start(underten2)-1,
+                    end = end(underten2),
+                    name = "n/a",
+                    score = 0,
+                    strand = strand(underten2)
+                    )
+write.table(underten2df,file="ct711a_Homoz2PrimaryNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+bedtools sort -i ct711a_Homoz1PrimaryNoncodingUnder10k.bed > ct711a_Homoz1PrimaryNoncodingUnder10kSorted.bed
+bedtools merge -i ct711a_Homoz1PrimaryNoncodingUnder10kSorted.bed -d 0 -s > ct711a_Homoz1PrimaryNoncodingUnder10kMerged.bed
+
+bedtools sort -i ct711a_Homoz2PrimaryNoncodingUnder10k.bed > ct711a_Homoz2PrimaryNoncodingUnder10kSorted.bed
+bedtools merge -i ct711a_Homoz2PrimaryNoncodingUnder10kSorted.bed -d 0 -s > ct711a_Homoz2PrimaryNoncodingUnder10kMerged.bed
+
+# R
+outsidemerged1 <- fread("ct711a_Homoz1PrimaryNoncodingUnder10kMerged.bed",data.table=TRUE,fill=TRUE)
+plus1 <- dplyr::filter(outsidemerged1,V4=="+")
+minus1 <- dplyr::filter(outsidemerged1,V4=="-")
+
+outsidemerged2 <- fread("ct711a_Homoz2PrimaryNoncodingUnder10kMerged.bed",data.table=TRUE,fill=TRUE)
+plus2 <- dplyr::filter(outsidemerged2,V4=="+")
+minus2 <- dplyr::filter(outsidemerged2,V4=="-")
+
+plus61 <- data.frame(plus1$V1,plus1$V2,plus1$V3,ID="n/a",score=0,strand=plus1$V4)
+minus61 <- data.frame(minus1$V1,minus1$V2,minus1$V3,ID="n/a",score=0,strand=minus1$V4)
+write.table(plus61,file="ct711a_Homoz1PrimaryNoncodingUnder10kMergedPlus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(minus61,file="ct711a_Homoz1PrimaryNoncodingUnder10kMergedMinus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+plus62 <- data.frame(plus2$V1,plus2$V2,plus2$V3,ID="n/a",score=0,strand=plus2$V4)
+minus62 <- data.frame(minus2$V1,minus2$V2,minus2$V3,ID="n/a",score=0,strand=minus2$V4)
+write.table(plus62,file="ct711a_Homoz2PrimaryNoncodingUnder10kMergedPlus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(minus62,file="ct711a_Homoz2PrimaryNoncodingUnder10kMergedMinus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+intersectBed -sorted -S -a ct711a_Homoz1PrimaryNoncodingUnder10kMergedPlus.bed -b ct711a_Homoz1PrimaryNoncodingUnder10kMergedMinus.bed > ct711a_Homoz1PrimaryNoncodingUnder10kMergedIntersected.bed
+
+intersectBed -sorted -S -a ct711a_Homoz2PrimaryNoncodingUnder10kMergedPlus.bed -b ct711a_Homoz2PrimaryNoncodingUnder10kMergedMinus.bed > ct711a_Homoz2PrimaryNoncodingUnder10kMergedIntersected.bed
+
+intersected1 <- fread("ct711a_Homoz1PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
+colnames(intersected1) <- c("chr","start","end","ID","score","strand")
+intersected2 <- fread("ct711a_Homoz2PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
+colnames(intersected2) <- c("chr","start","end","ID","score","strand")
+hetsintersected1 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
+colnames(hetsintersected1) <- c("chr","start","end","ID","score","strand")
+hetsintersected2 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/20_7_21 analyzed/ct711a_150804_hets_nuc2PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
+colnames(hetsintersected2) <- c("chr","start","end","ID","score","strand")
+
+#unstranded
+feat <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end))  
+bidir_read1 <- summarizeOverlaps(features=feat,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+bidir_read_counts1 <- assay(bidir_read1)
+intersected1 <- cbind(intersected1,bidir_read_counts1)
+
+#plus strand
+
+#minus strand
+
+
+feat <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end))  
+bidir_read1 <- summarizeOverlaps(features=feat,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+bidir_read_counts1 <- assay(bidir_read1)
+intersected1 <- cbind(intersected1,bidir_read_counts1)
+intersected1 <- dplyr::mutate(intersected1, size = end-start)
+write.table(intersected1,file="ct711aHomoz1PrimaryReadsBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+
+feat <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end))  
+bidir_read2 <- summarizeOverlaps(features=feat,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+bidir_read_counts2 <- assay(bidir_read2)
+intersected2 <- cbind(intersected2,bidir_read_counts2)
+intersected2 <- dplyr::mutate(intersected2, size = end-start)
+write.table(intersected2,file="ct711aHomoz2PrimaryReadsBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+intronlist <- fread("/auto/cmb-00/rr/engie/GRCz11introns.bed")
+colnames(intronlist) <- c("seqnames","start","end","ID","score","strand")
+gintron <- GRanges(intronlist)
+
+hets1 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1PrimaryReads.bed")
+hets2 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc2PrimaryReads.bed")
+colnames(hets1) <- c("seqnames","start","end","ID","score","strand")
+colnames(hets2) <- c("seqnames","start","end","ID","score","strand")
+ghets1 <- GRanges(hets1)
+ghets2 <- GRanges(hets2)
+
+seqlevelsStyle(ghets1) <- "UCSC"
+seqlevelsStyle(ghets2) <- "UCSC"
+
+hetsintron1 <- summarizeOverlaps(features=gintron,reads=ghets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+hetsintroncounts1 <- assay(hetsintrons1)
+introndf1 <- data.frame(gintron$ID,hetsintroncounts1)
+write.table(introndf1,file="ct711aHets1IntronReadCounts.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+hetsintron2 <- summarizeOverlaps(features=gintron,reads=ghets2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+hetsintroncounts2 <- assay(hetsintron2)
+introndf2 <- data.frame(gintron$ID,hetsintroncounts2)
+write.table(introndf2,file="ct711aHets2IntronReadCounts.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+homozintron1 <- summarizeOverlaps(features=gintron,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+homointroncounts1 <- assay(homozintron1)
+introndf1 <- data.frame(gintron$ID,homointroncounts1)
+write.table(introndf1,file="ct711aHomoz1IntronReadCounts.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
+homointron2 <- summarizeOverlaps(features=gintron,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+homointroncounts2 <- assay(homointron2)
+introndf2 <- data.frame(gintron$ID,homointroncounts2)
+write.table(introndf2,file="ct711aHomoz2IntronReadCounts.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
