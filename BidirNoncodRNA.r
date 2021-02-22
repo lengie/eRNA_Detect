@@ -111,3 +111,13 @@ intersectedchr1 <- data.frame(chr=paste("chr",intersectedchr1$chr,sep=""),
 				    strand=intersectedchr1$strand)
 write.table(intersectedchr1,file="GRCz11Star/ct711aHets1PrimaryUnder10kBidirRegionsChr1.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
+# TFBS alignment
+library(BSgenome.Drerio.UCSC.danRer11)
+library(motifmatchr)
+library(TFBSTools) 
+
+# downloaded single batch .txt for JASPAR code PFMs from JASPAR2020, raw JASPAR format
+motifs <- readJASPARMatrix("JASPAR2020CoreTransfac/JASPAR2020_CORE_vertebrates_non-redundant_pfms_jaspar.txt", matrixClass="PFM")
+matchscorecalc <- matchMotifs(motifs,gHomo1,genome="danRer11",out="score") #make sure GRanges object is UCSC seqlevelsStyle
+matches <- motifMatches(matchscorecalc)
+scores <- assay(matchscorecalc)
