@@ -73,25 +73,59 @@ txdb <- makeTxDbFromGFF(gtffile,
 seqlevelsStyle(txdb) <- "UCSC"
 transcripts <- transcripts(txdb)
 exons <- exons(txdb)
+utr5 <- fiveUTRsByTranscript(txdb)
+utr3 <- threeUTRsByTranscript(txdb)
 
 # trying to use the zebrafish ncRNA database
 lncfile <- "/panfs/qcb-panasas/engie/NCReadDist/ZFLNC_lncRNA.gtf"	
 lncRNA <- rtracklayer::import(lncfile) # will not load as a TxDb file
 
 ## extracting bidirectional regions in RNA-seq
-coding <- cds(txdb)
+utr5df <- as.data.frame(utr5)
+utr5minus <- dplyr::filter(utr5df,strand=="-")
+utr5plus <- dplyr::filter(utr5df,strand=="+")
+utr5minus <- data.frame(seqnames=utr5minus$seqnames,
+			start=utr5minus$start,
+			end=utr5minus$end+500,
+			strand=utr5minus$strand,
+			exon_id=utr5minus$exon_id,
+			exon_name=utr5minus$exon_name)
+utr5plus <- data.frame(seqnames=utr5plus$seqnames,
+		       start=utr5plus$start-500,
+		       end=utr5plus$end,
+		       strand=utr5plus$strand,
+		       exon_id=utr5plus$exon_id,
+		       exon_name=utr5plus$exon_name)
+
+utr3df <- as.data.frame(utr3)
+utr3minus <- dplyr::filter(utr3df,strand=="-")
+utr3plus <- dplyr::filter(utr53f,strand=="+")
+utr3minus <- data.frame(seqnames=utr3minus$seqnames,
+			start=utr3minus$start-500,
+			end=utr3minus$end,
+			strand=utr3minus$strand,
+			exon_id=utr3minus$exon_id,
+			exon_name=utr3minus$exon_name)
+utr3plus <- data.frame(seqnames=utr5minus$seqnames,
+		       start=utr5minus$start,
+		       end=utr5minus$end+500,
+		       strand=utr5minus$strand,
+		       exon_id=utr5minus$exon_id,
+		       exon_name=utr5minus$exon_name)
+
+coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
 
 overlaps <- findOverlaps(sox10_nuc1,coding,ignore.strand=FALSE) 
 hits1 <- sox10_nuc1[-queryHits(overlaps),]
 underten1 <- hits1[width(hits1)<10000]
 ten1 <- hits1[width(hits1)>10000]
-write.table(ten1,file="sox10_nuc1NoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(ten1,file="sox10_nuc1FlankedNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 overlaps2 <- findOverlaps(sox10_nuc2,coding,ignore.strand=FALSE) 
 hits2 <- sox10_nuc2[-queryHits(overlaps2),]
 underten2 <- hits2[width(hits2)<10000]
 ten2 <- hits2[width(hits2)>10000]
-write.table(ten2,file="sox10_nuc2NoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(ten2,file="sox10_nuc2FlankedNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 underten1df <- data.frame(chr = as.character(seqnames(underten1)),
                     		  start = start(underten1)-1,
@@ -100,7 +134,7 @@ underten1df <- data.frame(chr = as.character(seqnames(underten1)),
 				                  score = 0,
 				                  strand = strand(underten1)
 				                  )
-write.table(underten1df,file="sox10_nuc1NoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(underten1df,file="sox10_nuc1FlankedNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 underten2df <- data.frame(chr = as.character(seqnames(underten2)),
                     		  start = start(underten2)-1,
@@ -109,7 +143,7 @@ underten2df <- data.frame(chr = as.character(seqnames(underten2)),
 				                  score = 0,
 				                  strand = strand(underten2)
 				                  )
-write.table(underten2df,file="sox10_nuc2NoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(underten2df,file="sox10_nuc2FlankedNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 # exit R
 bedtools sort -i sox10_nuc1NoncodingUnder10k.bed > sox10_nuc1NoncodingUnder10kSorted.bed
