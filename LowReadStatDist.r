@@ -146,17 +146,17 @@ underten2df <- data.frame(chr = as.character(seqnames(underten2)),
 write.table(underten2df,file="sox10_nuc2FlankedNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 # exit R
-bedtools sort -i sox10_nuc1NoncodingUnder10k.bed > sox10_nuc1NoncodingUnder10kSorted.bed
-bedtools merge -i sox10_nuc1NoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc1NoncodingUnder10kMinusOnlyMerged.bed
-bedtools merge -i sox10_nuc1NoncodingUnder10kSorted.bed -d 0 -S + > sox10_nuc1NoncodingUnder10kPlusOnlyMerged.bed
+bedtools sort -i sox10_nuc1FlankedNoncodingUnder10k.bed > sox10_nuc1FlankedNoncodingUnder10kSorted.bed
+bedtools merge -i sox10_nuc1FlankedNoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc1FlankedNoncodingUnder10kMinusOnlyMerged.bed
+bedtools merge -i sox10_nuc1FlankedNoncodingUnder10kSorted.bed -d 0 -S + > sox10_nuc1FlankedNoncodingUnder10kPlusOnlyMerged.bed
 
-bedtools sort -i sox10_nuc2NoncodingUnder10k.bed > sox10_nuc2NoncodingUnder10kSorted.bed
-bedtools merge -i sox10_nuc2NoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc2NoncodingUnder10kMinusOnlyMerged.bed
-bedtools merge -i sox10_nuc2NoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc2NoncodingUnder10kPlusOnlyMerged.bed
+bedtools sort -i sox10_nuc2FlankedNoncodingUnder10k.bed > sox10_nuc2FlankedNoncodingUnder10kSorted.bed
+bedtools merge -i sox10_nuc2FlankedNoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc2FlankedNoncodingUnder10kMinusOnlyMerged.bed
+bedtools merge -i sox10_nuc2FlankedNoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed
 
 # back in R
-plus <- fread("sox10_nuc1NoncodingUnder10kSortedPlusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
-minus <- fread("sox10_nuc1NoncodingUnder10kSortedMinusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
+plus <- fread("sox10_nuc1FlankedNoncodingUnder10kPlusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
+minus <- fread("sox10_nuc1FlankedNoncodingUnder10kMinusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
 
 colnames(minus) <- c("seqnames","start","end","strand")
 minus <- cbind(minus, ID="N/A/",score="0")
@@ -166,11 +166,11 @@ colnames(plus) <- c("seqnames","start","end","strand")
 plus <- cbind(plus, ID="N/A/",score="0")
 plus <- plus[,c("seqnames","start","end","ID","score","strand")]
 
-write.table(plus,file="sox10_nuc1NoncodingUnder10kSortedMergedPlus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-write.table(minus,file="sox10_nuc1NoncodingUnder10kSortedMergedMinus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(plus,file="sox10_nuc1FlankedNoncodingUnder10kMergedPlus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(minus,file="sox10_nuc1FlankedNoncodingUnder10kMergedMinus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
-plus2 <- fread("sox10_nuc2NoncodingUnder10kSortedPlusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
-minus2 <- fread("sox10_nuc2NoncodingUnder10kSortedMinusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
+plus2 <- fread("sox10_nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
+minus2 <- fread("sox10_nuc2FlankedNoncodingUnder10kMinusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
 
 colnames(minus2) <- c("seqnames","start","end","strand")
 minus2 <- cbind(minus2, ID="N/A/",score="0")
@@ -180,31 +180,31 @@ colnames(plus2) <- c("seqnames","start","end","strand")
 plus2 <- cbind(plus2, ID="N/A/",score="0")
 plus2 <- plus2[,c("seqnames","start","end","ID","score","strand")]
 
-write.table(plus2,file="sox10_nuc2NoncodingUnder10kSortedMergedPlus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-write.table(minus2,file="sox10_nuc2NoncodingUnder10kSortedMergedMinus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(plus2,file="sox10_nuc2FlankedNoncodingUnder10kMergedPlus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(minus2,file="sox10_nuc2FlankedNoncodingUnder10kMergedMinus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 #exit R
-bedtools intersect -a sox10_nuc1NoncodingUnder10kSortedMergedPlus6.bed -b sox10_nuc1NoncodingUnder10kSortedMergedMinus6.bed -nonamecheck > sox10_nuc1NoncodingUnder10kMergedSeparatelyIntersected.bed
-bedtools intersect -a sox10_nuc2NoncodingUnder10kSortedMergedPlus6.bed -b sox10_nuc2NoncodingUnder10kSortedMergedMinus6.bed -nonamecheck > sox10_nuc2NoncodingUnder10kMergedSeparatelyIntersected.bed
+bedtools intersect -a sox10_nuc1FlankedNoncodingUnder10kMergedPlus.bed -b sox10_nuc1FlankedNoncodingUnder10kMergedMinus.bed -nonamecheck > sox10_nuc1FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
+bedtools intersect -a sox10_nuc2FlankedNoncodingUnder10kMergedPlus.bed -b sox10_nuc2FlankedNoncodingUnder10kMergedMinus.bed -nonamecheck > sox10_nuc2FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
 
 # back in R
-intersected1 <- fread("sox10_nuc1NoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
+intersected1 <- fread("sox10_nuc1FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
 colnames(intersected1) <- c("chr","start","end","ID","score","strand")
 feat <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end))  
 bidir_read1 <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
 bidir_read_counts1 <- assay(bidir_read1)
 intersected1 <- cbind(intersected1,bidir_read_counts1)
 intersected1 <- dplyr::mutate(intersected1, size = end-start)
-write.table(intersected1,file="sox10_nuc1BidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
+write.table(intersected1,file="sox10_nuc1FlankedBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
 
-intersected2 <- fread("sox10_nuc2NoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
+intersected2 <- fread("sox10_nuc2FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
 colnames(intersected2) <- c("chr","start","end","ID","score","strand")
 feat2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end))  
 bidir_read2 <- summarizeOverlaps(features=feat2,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
 bidir_read_counts2 <- assay(bidir_read2)
 intersected2 <- cbind(intersected2,bidir_read_counts2)
 intersected2 <- dplyr::mutate(intersected2, size = end-start)
-write.table(intersected2,file="sox10_nuc2BidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
+write.table(intersected2,file="sox10_nuc2FlankedBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
 
 gbidir1 <- GRanges(intersected1)
 gbidir2 <- GRanges(intersected2)
