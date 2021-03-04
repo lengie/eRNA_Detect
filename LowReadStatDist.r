@@ -14,6 +14,7 @@ library(dplyr)
 library(DESeq2)
 library(ggplot2)
 library(fitdistrplus)
+options(scipen=999)
 
 # if using bedgraphs
 sox10_nuc1minusfile <- "sox10nuc_minus1.bedGraph"
