@@ -100,19 +100,19 @@ utr5plus <- data.frame(seqnames=utr5plus$seqnames,
 
 utr3df <- as.data.frame(utr3)
 utr3minus <- dplyr::filter(utr3df,strand=="-")
-utr3plus <- dplyr::filter(utr53f,strand=="+")
+utr3plus <- dplyr::filter(utr3df,strand=="+")
 utr3minus <- data.frame(seqnames=utr3minus$seqnames,
 			start=utr3minus$start-500,
 			end=utr3minus$end,
 			strand=utr3minus$strand,
 			exon_id=utr3minus$exon_id,
 			exon_name=utr3minus$exon_name)
-utr3plus <- data.frame(seqnames=utr5minus$seqnames,
-		       start=utr5minus$start,
-		       end=utr5minus$end+500,
-		       strand=utr5minus$strand,
-		       exon_id=utr5minus$exon_id,
-		       exon_name=utr5minus$exon_name)
+utr3plus <- data.frame(seqnames=utr3minus$seqnames,
+		       start=utr3minus$start,
+		       end=utr3minus$end+500,
+		       strand=utr3minus$strand,
+		       exon_id=utr3minus$exon_id,
+		       exon_name=utr3minus$exon_name)
 
 coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
 
