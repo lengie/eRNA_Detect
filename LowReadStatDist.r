@@ -153,7 +153,7 @@ bedtools merge -i sox10_nuc1FlankedNoncodingUnder10kSorted.bed -d 0 -S + > sox10
 
 bedtools sort -i sox10_nuc2FlankedNoncodingUnder10k.bed > sox10_nuc2FlankedNoncodingUnder10kSorted.bed
 bedtools merge -i sox10_nuc2FlankedNoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc2FlankedNoncodingUnder10kMinusOnlyMerged.bed
-bedtools merge -i sox10_nuc2FlankedNoncodingUnder10kSorted.bed -d 0 -S - > sox10_nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed
+bedtools merge -i sox10_nuc2FlankedNoncodingUnder10kSorted.bed -d 0 -S + > sox10_nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed
 
 # back in R
 plus <- fread("sox10_nuc1FlankedNoncodingUnder10kPlusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
@@ -178,7 +178,7 @@ minus2 <- cbind(minus2, ID="N/A/",score="0")
 minus2 <- minus2[,c("seqnames","start","end","ID","score","strand")]
 
 colnames(plus2) <- c("seqnames","start","end","strand")
-plus2 <- cbind(plus2, ID="N/A/",score="0")
+plus2 <- cbind(plus2, ID=c(1:nrow(plus2)),score="0")
 plus2 <- plus2[,c("seqnames","start","end","ID","score","strand")]
 
 write.table(plus2,file="sox10_nuc2FlankedNoncodingUnder10kMergedPlus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
@@ -197,6 +197,8 @@ bidir_read_counts1 <- assay(bidir_read1)
 intersected1 <- cbind(intersected1,bidir_read_counts1)
 intersected1 <- dplyr::mutate(intersected1, size = end-start)
 write.table(intersected1,file="sox10_nuc1FlankedBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
+IDasScore <- intersected1[,c(1,2,3,7,7,6)]
+write.table(IDasScore,"sox10_nuc1FlankedBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
 
 intersected2 <- fread("sox10_nuc2FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
 colnames(intersected2) <- c("chr","start","end","ID","score","strand")
@@ -209,6 +211,11 @@ write.table(intersected2,file="sox10_nuc2FlankedBidirRegions.csv",quote=FALSE,ro
 
 gbidir1 <- GRanges(intersected1)
 gbidir2 <- GRanges(intersected2)
+
+for(i in 1:25){name <- paste("nuc1_",i,sep="")
+                 assign(name,subset(gnuc1,seqnames==i))}
+for(i in 1:25){name <- paste("nuc2_",i,sep="")
+                 assign(name,subset(gnuc2,seqnames==i))}
 
 # generating read count tables
 exoncounts1 <- summarizeOverlaps(features=exons,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
