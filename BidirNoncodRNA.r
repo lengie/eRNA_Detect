@@ -17,6 +17,7 @@ library(ggplot2)
 library(dplyr) 
 library(data.table)
 library(bedr)
+options(scipen=999)
 
 bam1file <- "ct711a_150804_hets_nuc1PrimaryReads.bam"
 bamfile2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam" 
