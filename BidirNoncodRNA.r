@@ -112,6 +112,70 @@ intersectedchr1 <- data.frame(chr=paste("chr",intersectedchr1$chr,sep=""),
 				    strand=intersectedchr1$strand)
 write.table(intersectedchr1,file="GRCz11Star/ct711aHets1PrimaryUnder10kBidirRegionsChr1.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
+intersected1 <- fread("ct711a_Homoz1PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
+colnames(intersected1) <- c("chr","start","end","ID","score","strand")
+intersected2 <- fread("ct711a_Homoz2PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
+colnames(intersected2) <- c("chr","start","end","ID","score","strand")
+hetsintersected1 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE) #from jan 2021
+colnames(hetsintersected1) <- c("chr","start","end","ID","score","strand")
+hetsintersected2 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/20_7_21 analyzed/ct711a_150804_hets_nuc2PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE) #from sept 2020
+colnames(hetsintersected2) <- c("chr","start","end","ID","score","strand")
+
+#unstranded
+feathomo1 <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end),strand=intersected1$strand)  #EDIT LATER ADDED STRAND
+feathomo2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end),strand=intersected2$strand)  
+feathets1 <- GRanges(seqnames=hetsintersected1$chr,ranges=IRanges(start=hetsintersected1$start,end=hetsintersected1$end),strand=hetsintersected1$strand)  
+feathets2 <- GRanges(seqnames=hetsintersected2$chr,ranges=IRanges(start=hetsintersected2$start,end=hetsintersected2$end),strand=hetsintersected2$strand)  
+
+bidir_homo1 <- summarizeOverlaps(features=feathomo1,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+bidir_homo_counts1 <- assay(bidir_homo1)
+bidir_homo2 <- summarizeOverlaps(features=feathomo2,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+bidir_homo_counts2 <- assay(bidir_homo2)
+bidir_hets1 <- summarizeOverlaps(features=feathets1,reads=ghets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+bidir_hets_counts1 <- assay(bidir_hets1)
+bidir_hets2 <- summarizeOverlaps(features=feathets2,reads=ghets2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+bidir_hets_counts2 <- assay(bidir_hets2)
+
+#plus strand
+bidir_homo1plus <- summarizeOverlaps(features=feathomo1,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_homo_counts1plus <- assay(bidir_homo1plus)
+bidir_homo2plus <- summarizeOverlaps(features=feathomo2,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_homo_counts2plus <- assay(bidir_homo2plus)
+bidir_hets1plus <- summarizeOverlaps(features=feathets1,reads=ghets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_hets_counts1plus <- assay(bidir_hets1plus)
+bidir_hets2plus <- summarizeOverlaps(features=feathets2,reads=ghets2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_hets_counts2plus <- assay(bidir_hets2plus)
+
+#minus strand
+intersected1$strand <- "-"
+intersected2$strand <- "-"
+hetsintersected1$strand <- "-"
+hetsintersected2$strand <- "-"
+feathomo1 <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end),strand=intersected1$strand)  
+feathomo2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end),strand=intersected2$strand)  
+feathets1 <- GRanges(seqnames=hetsintersected1$chr,ranges=IRanges(start=hetsintersected1$start,end=hetsintersected1$end),strand=hetsintersected1$strand)  
+feathets2 <- GRanges(seqnames=hetsintersected2$chr,ranges=IRanges(start=hetsintersected2$start,end=hetsintersected2$end),strand=hetsintersected2$strand)  
+
+bidir_homo1minus <- summarizeOverlaps(features=feathomo1,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_homo_counts1minus <- assay(bidir_homo1minus)
+bidir_homo2minus <- summarizeOverlaps(features=feathomo2,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_homo_counts2minus <- assay(bidir_homo2minus)
+bidir_hets1minus <- summarizeOverlaps(features=feathets1,reads=ghets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_hets_counts1minus <- assay(bidir_hets1minus)
+bidir_hets2minus <- summarizeOverlaps(features=feathets2,reads=ghets2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+bidir_hets_counts2minus <- assay(bidir_hets2minus)
+
+intersected1counts <- cbind(intersected1,bothstrands=bidir_homo_counts1, plus=bidir_homo_counts1plus, minus=bidir_homo_counts1minus)
+intersected1counts <- dplyr::mutate(intersected1counts, size = end-start)
+intersected2counts <- cbind(intersected2,bothstrands=bidir_homo_counts2, plus=bidir_homo_counts2plus, minus=bidir_homo_counts2minus)
+intersected2counts <- dplyr::mutate(intersected2counts, size = end-start)
+
+hetsintersected1counts <- cbind(hetsintersected1,bothstrands=bidir_hets_counts1,plus=bidir_hets_counts1plus, minus=bidir_hets_counts1minus)
+hetsintersected1counts <- dplyr::mutate(hetsintersected1counts, size = end-start)
+hetsintersected2counts <- cbind(hetsintersected2,bothstrands=bidir_hets_counts2, plus=bidir_hets_counts2plus, minus=bidir_hets_counts2minus)
+hetsintersected2counts <- dplyr::mutate(hetsintersected2counts, size = end-start)
+
+
 # TFBS alignment
 library(BSgenome.Drerio.UCSC.danRer11)
 library(motifmatchr)
