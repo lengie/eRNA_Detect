@@ -66,7 +66,7 @@ sox10_nuc2 <- unlist(grl2)
 polyA <- unlist(grA)
 
 # retrieve the annotations to generate count tables
-gtffile <- "/panfs/qcb-panasas/engie/GRCz11EnhDet/Danio_rerio.GRCz11.99.gtf"
+gtffile <- "/auto/cmb-00/rr/engie/GCF_000002035.4_Zv9_genomic.gtf"
 txdb <- makeTxDbFromGFF(gtffile,
                         format="gtf",
                         circ_seqs = character()
@@ -74,45 +74,37 @@ txdb <- makeTxDbFromGFF(gtffile,
 seqlevelsStyle(txdb) <- "UCSC"
 transcripts <- transcripts(txdb)
 exons <- exons(txdb)
-utr5 <- fiveUTRsByTranscript(txdb)
-utr3 <- threeUTRsByTranscript(txdb)
+utr5 <- fread("Zv95UTR.bed")
+utr3 <- fread("Zv93UTR.bed")
+colnames(utr5) <- 
+colnames(utr3) <-
 
 # trying to use the zebrafish ncRNA database
 lncfile <- "/panfs/qcb-panasas/engie/NCReadDist/ZFLNC_lncRNA.gtf"	
 lncRNA <- rtracklayer::import(lncfile) # will not load as a TxDb file
 
 ## extracting bidirectional regions in RNA-seq
-utr5df <- as.data.frame(utr5)
-utr5minus <- dplyr::filter(utr5df,strand=="-")
-utr5plus <- dplyr::filter(utr5df,strand=="+")
+utr5minus <- dplyr::filter(utr5,strand=="-")
+utr5plus <- dplyr::filter(utr5,strand=="+")
 utr5minus <- data.frame(seqnames=utr5minus$seqnames,
 			start=utr5minus$start,
 			end=utr5minus$end+500,
-			strand=utr5minus$strand,
-			exon_id=utr5minus$exon_id,
-			exon_name=utr5minus$exon_name)
+			strand=utr5minus$strand)
 utr5plus <- data.frame(seqnames=utr5plus$seqnames,
 		       start=utr5plus$start-500,
 		       end=utr5plus$end,
-		       strand=utr5plus$strand,
-		       exon_id=utr5plus$exon_id,
-		       exon_name=utr5plus$exon_name)
+		       strand=utr5plus$strand)
 
-utr3df <- as.data.frame(utr3)
-utr3minus <- dplyr::filter(utr3df,strand=="-")
-utr3plus <- dplyr::filter(utr3df,strand=="+")
+utr3minus <- dplyr::filter(utr3,strand=="-")
+utr3plus <- dplyr::filter(utr3,strand=="+")
 utr3minus <- data.frame(seqnames=utr3minus$seqnames,
 			start=utr3minus$start-500,
 			end=utr3minus$end,
-			strand=utr3minus$strand,
-			exon_id=utr3minus$exon_id,
-			exon_name=utr3minus$exon_name)
+			strand=utr3minus$strand)
 utr3plus <- data.frame(seqnames=utr3minus$seqnames,
 		       start=utr3minus$start,
 		       end=utr3minus$end+500,
-		       strand=utr3minus$strand,
-		       exon_id=utr3minus$exon_id,
-		       exon_name=utr3minus$exon_name)
+		       strand=utr3minus$strand)
 
 coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
 
