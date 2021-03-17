@@ -188,29 +188,37 @@ bedtools sort -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed > sox1
 bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed
 
 # back in R
-intersected1 <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
-colnames(intersected1) <- c("chr","start","end","ID","score","strand")
-feat <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end))  
+nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
+nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
+head(nuc1bidir)
+colnames() <- c("chr","start","end","ID","score","strand")
+
+nuc1 <- fread("GSM2386488_sox10_nuc_combined.bed")
+nuc2 <- fread("GSM2386489_sox10_nuc_combined.bed")
+colnames(nuc1) <- c("chr","start","end","ID","score","strand")
+colnames(nuc2) <- c("chr","start","end","ID","score","strand")
+sox10_nuc1 <- GRanges(nuc1)
+sox10_nuc2 <- GRanges(nuc2)
+
+feat <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end))  
 bidir_read1 <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
 bidir_read_counts1 <- assay(bidir_read1)
-intersected1 <- cbind(intersected1,bidir_read_counts1)
-intersected1 <- dplyr::mutate(intersected1, size = end-start)
-write.table(intersected1,file="sox10_nuc1FlankedBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
-IDasScore <- intersected1[,c(1,2,3,7,7,6)]
+nuc1bidir <- cbind(nuc1bidir,bidir_read_counts1)
+nuc1bidir <- dplyr::mutate(nuc1bidir, size = end-start)
+IDasScore <- nuc1bidir[,c(1,2,3,7,7,6)]
 write.table(IDasScore,"sox10_Zv9nuc1FlankedBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
 
-intersected2 <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
-colnames(intersected2) <- c("chr","start","end","ID","score","strand")
-feat2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end))  
+feat2 <- GRanges(seqnames=nuc2bidir$chr,ranges=IRanges(start=nuc2bidir$start,end=nuc2bidir$end))  
 bidir_read2 <- summarizeOverlaps(features=feat2,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
 bidir_read_counts2 <- assay(bidir_read2)
-intersected2 <- cbind(intersected2,bidir_read_counts2)
-intersected2 <- dplyr::mutate(intersected2, size = end-start)
-write.table(intersected2,file="sox10_Zv9nuc2FlankedBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
+nuc2bidir <- cbind(nuc2bidir,bidir_read_counts2)
+nuc2bidir <- dplyr::mutate(nuc2bidir, size = end-start)
+IDasScore <- nuc2bidir[,c(1,2,3,7,7,6)]
+write.table(IDasScore,"sox10_Zv9nuc2FlankedBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
 
 #plus strand
-feat1 <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end),strand="+")
-feat2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end),strand="+")  
+feat1 <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end),strand="+")
+feat2 <- GRanges(seqnames=nuc2bidir$chr,ranges=IRanges(start=nuc2bidir$start,end=nuc2bidir$end),strand="+")  
 
 bidir_sox1plus <- summarizeOverlaps(features=feat1,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
 bidir_sox10_counts1plus <- assay(bidir_sox1plus)
@@ -218,21 +226,21 @@ bidir_sox2plus <- summarizeOverlaps(features=feat2,reads=sox10_nuc2,singleEnd=FA
 bidir_sox10_counts2plus <- assay(bidir_sox2plus)
 
 #minus strand
-feat1 <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end),strand="-")  
-feat2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end),strand="-")  
+feat1 <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end),strand="-")  
+feat2 <- GRanges(seqnames=nuc2bidir$chr,ranges=IRanges(start=nuc2bidir$start,end=nuc2bidir$end),strand="-")  
 
 bidir_sox1minus <- summarizeOverlaps(features=feat1,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
 bidir_sox10_counts1minus <- assay(bidir_sox1minus)
 bidir_sox2minus <- summarizeOverlaps(features=feat2,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
 bidir_sox10_counts2minus <- assay(bidir_sox2minus)
 
-intersected1counts <- cbind(intersected1[,c(1,2,3,8,7)],plus=bidir_sox10_counts1plus, minus=bidir_sox10_counts1minus)
-intersected1counts <- dplyr::mutate(intersected1counts, size = end-start)
-intersected2counts <- cbind(intersected2[,c(1,2,3,8,7)],plus=bidir_sox10_counts2plus, minus=bidir_sox10_counts2minus)
-intersected2counts <- dplyr::mutate(intersected2counts, size = end-start)
+counts1 <- cbind(nuc1bidir[,c(1,2,3,8,7)],plus=bidir_sox10_counts1plus, minus=bidir_sox10_counts1minus)
+counts1 <- dplyr::mutate(counts1, size = end-start)
+counts2 <- cbind(nuc2bidir[,c(1,2,3,8,7)],plus=bidir_sox10_counts2plus, minus=bidir_sox10_counts2minus)
+counts2 <- dplyr::mutate(counts2, size = end-start)
 
-write.table(intersected1counts,file="sox10_Zv9nuc1FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
-write.table(intersected2counts,file="sox10_Zv9nuc2FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
+write.table(counts1,file="sox10_Zv9nuc1FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
+write.table(counts2,file="sox10_Zv9nuc2FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
 
 #overlaps comparison
 for(i in 1:25){name <- paste("nuc1_",i,sep="")
