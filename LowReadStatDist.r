@@ -190,15 +190,8 @@ bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
 # back in R
 nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
 nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
-head(nuc1bidir)
-colnames() <- c("chr","start","end","ID","score","strand")
-
-nuc1 <- fread("GSM2386488_sox10_nuc_combined.bed")
-nuc2 <- fread("GSM2386489_sox10_nuc_combined.bed")
-colnames(nuc1) <- c("chr","start","end","ID","score","strand")
-colnames(nuc2) <- c("chr","start","end","ID","score","strand")
-sox10_nuc1 <- GRanges(nuc1)
-sox10_nuc2 <- GRanges(nuc2)
+colnames(nuc1bidir) <- c("chr","start","end","ID","score","strand")
+colnames(nuc2bidir) <- c("chr","start","end","ID","score","strand")
 
 feat <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end))  
 bidir_read1 <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
