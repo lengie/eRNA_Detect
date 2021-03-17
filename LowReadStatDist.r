@@ -151,35 +151,41 @@ bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kSorted.bed -d 0 -S + > so
 # back in R
 plus <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kPlusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
 minus <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kMinusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
-
-colnames(minus) <- c("seqnames","start","end","strand")
-minus <- cbind(minus, ID="N/A/",score="0")
-minus <- minus[,c("seqnames","start","end","ID","score","strand")]
-
-colnames(plus) <- c("seqnames","start","end","strand")
-plus <- cbind(plus, ID="N/A/",score="0")
-plus <- plus[,c("seqnames","start","end","ID","score","strand")]
-
-write.table(plus,file="sox10_Zv9nuc1FlankedNoncodingUnder10kMergedPlus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-write.table(minus,file="sox10_Zv9nuc1FlankedNoncodingUnder10kMergedMinus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-
 plus2 <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
 minus2 <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kMinusOnlyMerged.bed",data.table=TRUE,fill=TRUE)
-
+colnames(minus) <- c("seqnames","start","end","strand")
+colnames(plus) <- c("seqnames","start","end","strand")
 colnames(minus2) <- c("seqnames","start","end","strand")
-minus2 <- cbind(minus2, ID="N/A/",score="0")
-minus2 <- minus2[,c("seqnames","start","end","ID","score","strand")]
-
 colnames(plus2) <- c("seqnames","start","end","strand")
-plus2 <- cbind(plus2, ID=c(1:nrow(plus2)),score="0")
-plus2 <- plus2[,c("seqnames","start","end","ID","score","strand")]
+plus <- GRanges(plus)
+minus <- GRanges(minus)
+plus2 <- GRanges(plus2)
+minus2 <- GRanges(minus2)
+nuc1merge <- mergeByOverlaps(minus,plus,ignore.strand=TRUE)
+nuc2merge <- mergeByOverlaps(minus2,plus2,ignore.strand=TRUE)
 
-write.table(plus2,file="sox10_Zv9nuc2FlankedNoncodingUnder10kMergedPlus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-write.table(minus2,file="sox10_Zv9nuc2FlankedNoncodingUnder10kMergedMinus6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+nuc1merged <- data.frame(chr=c(seqnames(nuc1merge$plus),seqnames(nuc1merge$minus)),
+                        start=c(start(nuc1merge$plus),start(nuc1merge$minus)),
+                        end=c(end(nuc1merge$plus),end(nuc1merge$minus)),
+                        ID="n/a",
+                        score=0,
+                        strand=c(strand(nuc1merge$plus),strand(nuc1merge$minus)))
+nuc2merged <- data.frame(chr=c(seqnames(nuc2merge$plus2),seqnames(nuc2merge$minus2)),
+                        start=c(start(nuc2merge$plus2),start(nuc2merge$minus2)),
+                        end=c(end(nuc2merge$plus2),end(nuc2merge$minus2)),
+                        ID="n/a",
+                        score=0,
+                        strand=c(strand(nuc2merge$plus2),strand(nuc2merge$minus2)))
 
-#exit R
-bedtools intersect -a sox10_Zv9nuc1FlankedNoncodingUnder10kMergedPlus6.bed -b sox10_Zv9nuc1FlankedNoncodingUnder10kMergedMinus6.bed -nonamecheck > sox10_Zv9nuc1FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
-bedtools intersect -a sox10_Zv9nuc2FlankedNoncodingUnder10kMergedPlus6.bed -b sox10_Zv9nuc2FlankedNoncodingUnder10kMergedMinus6.bed -nonamecheck > sox10_Zv9nuc2FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
+write.table(nuc1merged,file="sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+write.table(nuc2merged,file="sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+# outside of R
+bedtools sort -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
+bedtools merge -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed
+
+bedtools sort -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
+bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed
 
 # back in R
 intersected1 <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed",data.table=TRUE,fill=TRUE)
