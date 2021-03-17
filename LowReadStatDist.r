@@ -190,24 +190,22 @@ bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
 # back in R
 nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
 nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
-colnames(nuc1bidir) <- c("chr","start","end","ID","score","strand")
-colnames(nuc2bidir) <- c("chr","start","end","ID","score","strand")
+colnames(nuc1bidir) <- c("chr","start","end")
+colnames(nuc2bidir) <- c("chr","start","end")	
 
 feat <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end))  
 bidir_read1 <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
 bidir_read_counts1 <- assay(bidir_read1)
-nuc1bidir <- cbind(nuc1bidir,bidir_read_counts1)
 nuc1bidir <- dplyr::mutate(nuc1bidir, size = end-start)
-IDasScore <- nuc1bidir[,c(1,2,3,7,7,6)]
-write.table(IDasScore,"sox10_Zv9nuc1FlankedBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
+nuc1bidir <- cbind(nuc1bidir,bidir_read_counts1,strand="+")
+write.table(nuc1bidir,"sox10_Zv9nuc1FlankedWiderBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
 
 feat2 <- GRanges(seqnames=nuc2bidir$chr,ranges=IRanges(start=nuc2bidir$start,end=nuc2bidir$end))  
 bidir_read2 <- summarizeOverlaps(features=feat2,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
 bidir_read_counts2 <- assay(bidir_read2)
-nuc2bidir <- cbind(nuc2bidir,bidir_read_counts2)
 nuc2bidir <- dplyr::mutate(nuc2bidir, size = end-start)
-IDasScore <- nuc2bidir[,c(1,2,3,7,7,6)]
-write.table(IDasScore,"sox10_Zv9nuc2FlankedBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
+nuc2bidir <- cbind(nuc2bidir,bidir_read_counts2,strand="+")
+write.table(nuc2bidir,"sox10_Zv9nuc2FlankedBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
 
 #plus strand
 feat1 <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end),strand="+")
