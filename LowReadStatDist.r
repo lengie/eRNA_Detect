@@ -14,6 +14,9 @@ library(dplyr)
 library(DESeq2)
 library(ggplot2)
 library(fitdistrplus)
+library(ballgown)
+library(BSgenome.Drerio.UCSC.danRer11)
+library(TFBSTools) 
 options(scipen=999)
 
 # if using bedgraphs
