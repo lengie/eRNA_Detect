@@ -340,23 +340,23 @@ eqscores2 <- assay(equalmatchscorecalc2)
 
 sums <- rowSums(plusmatches)
 zero <- which(sums==0)
-rem <- -chrplus[zero,]
+rem <- chrplus[-zero,]
 sumsm <- rowSums(minusmatches)
 zerom <- which(sumsm==0)
-remminus <- -chrminus[zerom,]
-sumseq <- rowSums(eqmatches)
+remminus <- chrminus[-zerom,]
+sumeq <- rowSums(eqmatches)
 zeroeq <- which(sumeq==0)
-remeq <- -chrequal[zeroeq,]
+remeq <- chrequal[-zeroeq,]
 
 sums2 <- rowSums(plusmatches2)
 zero2 <- which(sums2==0)
-remp2 <- -chrplus2[zero2,]
-sumsm <- rowSums(minusmatches)
-zerom <- which(sumsm==0)
-remminus <- -chrminus[zerom,]
-sumseq <- rowSums(eqmatches)
-zeroeq <- which(sumeq==0)
-remeq <- -chrequal[zeroeq,]
+remp2 <- chrplus2[-zero2,]
+sumsm2 <- rowSums(minusmatches2)
+zerom2 <- which(sumsm2==0)
+remminus2 <- chrminus2[-zerom2,]
+sumeq2 <- rowSums(eqmatches2)
+zeroeq2 <- which(sumeq2==0)
+remeq2 <- chrequal[-zeroeq2,]
 
 ## DESeq Analysis for each type of data
 cond <- c("nuc","nuc","polyA")
