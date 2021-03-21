@@ -338,6 +338,26 @@ equalmatchscorecalc2 <- matchMotifs(motifs,gequal2,genome="danRer7",out="score")
 eqmatches2 <- motifMatches(equalmatchscorecalc2)
 eqscores2 <- assay(equalmatchscorecalc2)
 
+sums <- rowSums(plusmatches)
+zero <- which(sums==0)
+rem <- -chrplus[zero,]
+sumsm <- rowSums(minusmatches)
+zerom <- which(sumsm==0)
+remminus <- -chrminus[zerom,]
+sumseq <- rowSums(eqmatches)
+zeroeq <- which(sumeq==0)
+remeq <- -chrequal[zeroeq,]
+
+sums2 <- rowSums(plusmatches2)
+zero2 <- which(sums2==0)
+remp2 <- -chrplus2[zero2,]
+sumsm <- rowSums(minusmatches)
+zerom <- which(sumsm==0)
+remminus <- -chrminus[zerom,]
+sumseq <- rowSums(eqmatches)
+zeroeq <- which(sumeq==0)
+remeq <- -chrequal[zeroeq,]
+
 ## DESeq Analysis for each type of data
 cond <- c("nuc","nuc","polyA")
 colData <- data.frame(cond=cond) 
