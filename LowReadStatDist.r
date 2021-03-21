@@ -15,8 +15,9 @@ library(DESeq2)
 library(ggplot2)
 library(fitdistrplus)
 library(ballgown)
-library(BSgenome.Drerio.UCSC.danRer11)
+library(BSgenome.Drerio.UCSC.danRer7)
 library(TFBSTools) 
+library(motifmatchr)
 options(scipen=999)
 
 # if using bedgraphs
@@ -87,6 +88,32 @@ colnames(utr3) <- c("seqnames","start","end","ID","score","strand")
 lncfile <- "/panfs/qcb-panasas/engie/NCReadDist/ZFLNC_lncRNA.gtf"	
 lncRNA <- rtracklayer::import(lncfile) # will not load as a TxDb file
 
+# generating read count tables
+exoncounts1 <- summarizeOverlaps(features=exons,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+exoncounts2 <- summarizeOverlaps(features=exons,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+exoncounts1tb <- assay(exoncounts1)
+exoncounts2tb <- assay(exoncounts2)
+
+nccounts1 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+nccounts2 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
+nccounts1tb <- assay(nccounts1)
+nccounts2tb <- assay(nccounts2)
+
+txcounts1 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+txcounts2 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
+txcounts1tb <- assay(txcounts1)
+txcounts2tb <- assay(txcounts2)
+
+exonA <- summarizeOverlaps(features=exons,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+exonAtb <- assay(exonA)
+
+ncA <- summarizeOverlaps(features=lncRNA,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+ncAtb <- assay(ncA)
+
+txA <- summarizeOverlaps(features=transcripts,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
+txAtb <- assay(txA)
+
+
 ## extracting bidirectional regions in RNA-seq
 utr5minus <- dplyr::filter(utr5,strand=="-")
 utr5plus <- dplyr::filter(utr5,strand=="+")
@@ -125,21 +152,21 @@ ten2 <- hits2[width(hits2)>10000]
 write.table(ten2,file="sox10_Zv9nuc2FlankedNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 underten1df <- data.frame(chr = as.character(seqnames(underten1)),
-                    		  start = start(underten1)-1,
-                    	 	  end = end(underten1),
-                				  name = "n/a",
-				                  score = 0,
-				                  strand = strand(underten1)
-				                  )
+                    	  start = start(underten1),
+                    	  end = end(underten1),
+               		  name = "n/a",
+			  score = 0,
+			  strand = strand(underten1)
+			  )
 write.table(underten1df,file="sox10_Zv9nuc1FlankedNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 underten2df <- data.frame(chr = as.character(seqnames(underten2)),
-                    		  start = start(underten2)-1,
-                    	 	  end = end(underten2),
-                				  name = "n/a",
-				                  score = 0,
-				                  strand = strand(underten2)
-				                  )
+                    	  start = start(underten2),
+                    	  end = end(underten2),
+                	  name = "n/a",
+			  score = 0,
+			  strand = strand(underten2)
+			  )
 write.table(underten2df,file="sox10_Zv9nuc2FlankedNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 # exit R
@@ -237,35 +264,79 @@ write.table(counts1,file="sox10_Zv9nuc1FlankedBidirRegionsStrandedCounts.bed",qu
 write.table(counts2,file="sox10_Zv9nuc2FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
 
 #overlaps comparison
-for(i in 1:25){name <- paste("nuc1_",i,sep="")
-                 assign(name,subset(gnuc1,seqnames==i))}
-for(i in 1:25){name <- paste("nuc2_",i,sep="")
-                 assign(name,subset(gnuc2,seqnames==i))}
+allten <- fread("ATACCrossRef/sox10_BiotaggingAllClusters.bed")
+colnames(allten) <- c("chr","start","end","size","strand","counts","size")
+allclusters <- GRanges(allten)
 
-# generating read count tables
-exoncounts1 <- summarizeOverlaps(features=exons,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-exoncounts2 <- summarizeOverlaps(features=exons,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-exoncounts1tb <- assay(exoncounts1)
-exoncounts2tb <- assay(exoncounts2)
+sox10_1 <- fread('ATACCrossRef/Sox10nuclear_cluster1.counts.txt')
+sox10_2 <- fread('ATACCrossRef/Sox10nuclear_cluster2.counts.txt')
+sox10_3 <- fread('ATACCrossRef/Sox10nuclear_cluster3.counts.txt')
+sox10_4 <- fread('ATACCrossRef/Sox10nuclear_cluster4.counts.txt')
+sox10_5 <- fread('ATACCrossRef/Sox10nuclear_cluster5.counts.txt')
+sox10_6 <- fread('ATACCrossRef/Sox10nuclear_cluster6.counts.txt')
+sox10_7 <- fread('ATACCrossRef/Sox10nuclear_cluster7.counts.txt')
+sox10_8 <- fread('ATACCrossRef/Sox10nuclear_cluster8.counts.txt')
+sox10_9 <- fread('ATACCrossRef/Sox10nuclear_cluster9.counts.txt')
+sox10_10 <- fread('ATACCrossRef/Sox10nuclear_cluster10.counts.txt')
 
-nccounts1 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-nccounts2 <- summarizeOverlaps(features=lncRNA,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
-nccounts1tb <- assay(nccounts1)
-nccounts2tb <- assay(nccounts2)
+cluster1 <- GRanges(sox10_1)
+cluster2 <- GRanges(sox10_2)
+cluster3 <- GRanges(sox10_3)
+cluster4 <- GRanges(sox10_4)
+cluster5 <- GRanges(sox10_5)
+cluster6 <- GRanges(sox10_6)
+cluster7 <- GRanges(sox10_7)
+cluster8 <- GRanges(sox10_8)
+cluster9 <- GRanges(sox10_9)
+cluster10 <- GRanges(sox10_10)
 
-txcounts1 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-txcounts2 <- summarizeOverlaps(features=transcripts,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE) 
-txcounts1tb <- assay(txcounts1)
-txcounts2tb <- assay(txcounts2)
+chrplus <- dplyr::filter(plusbig,grepl("chr",chr))
+chrminus <- dplyr::filter(minusbig,grepl("chr",chr))
+chrequal <- dplyr::filter(equal,grepl("chr",chr))
+chrplus2 <- dplyr::filter(plusbig2,grepl("chr",chr))
+chrminus2 <- dplyr::filter(minusbig2,grepl("chr",chr))
+chrequal2 <- dplyr::filter(equal2,grepl("chr",chr))
 
-exonA <- summarizeOverlaps(features=exons,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-exonAtb <- assay(exonA)
+gplus <- GRanges(chrplus)
+gminus <- GRanges(chrminus)
+gequal <- GRanges(chrequal)
+gplus2 <- GRanges(chrplus2)
+gminus2 <- GRanges(chrminus2)
+gequal2 <- GRanges(chrequal2)
 
-ncA <- summarizeOverlaps(features=lncRNA,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-ncAtb <- assay(ncA)
+pctOverlap(gplus,allclusters)
+pctOverlap(gequal,allclusters)
+pctOverlap(gminus,allclusters)
+pctOverlap(gplus2,allclusters)
+pctOverlap(gequal2,allclusters)
+pctOverlap(gminus2,allclusters)
 
-txA <- summarizeOverlaps(features=transcripts,reads=polyA,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE)
-txAtb <- assay(txA)
+## TFBSs for the bidirectional regions
+motifs <- readJASPARMatrix("../JASPAR2020CoreTransfac/JASPAR2020_CORE_vertebrates_non-redundant_pfms_jaspar.txt", matrixClass="PFM")
+plusmatchscorecalc <- matchMotifs(motifs,gplus,genome="danRer7",out="score")
+plusmatches <- motifMatches(plusmatchscorecalc)
+plusscores <- assay(plusmatchscorecalc)
+
+minusmatchscorecalc <- matchMotifs(motifs,gminus,genome="danRer7",out="score")
+minusmatches <- motifMatches(minusmatchscorecalc)
+minusscores <- assay(minusmatchscorecalc)
+
+equalmatchscorecalc <- matchMotifs(motifs,gequal,genome="danRer7",out="score")
+eqmatches <- motifMatches(equalmatchscorecalc)
+eqscores <- assay(equalmatchscorecalc)
+
+
+plusmatchscorecalc2 <- matchMotifs(motifs,gplus2,genome="danRer7",out="score")
+plusmatches2 <- motifMatches(plusmatchscorecalc2)
+plusscores2 <- assay(plusmatchscorecalc2)
+
+minusmatchscorecalc2 <- matchMotifs(motifs,gminus2,genome="danRer7",out="score")
+minusmatches2 <- motifMatches(minusmatchscorecalc2)
+minusscores2 <- assay(minusmatchscorecalc2)
+
+equalmatchscorecalc2 <- matchMotifs(motifs,gequal2,genome="danRer7",out="score")
+eqmatches2 <- motifMatches(equalmatchscorecalc2)
+eqscores2 <- assay(equalmatchscorecalc2)
 
 ## DESeq Analysis for each type of data
 cond <- c("nuc","nuc","polyA")
