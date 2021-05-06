@@ -1,5 +1,5 @@
 ## Written by Liana Engie, Dr. Scott E Fraser lab
-## Last updated 1/25/2021
+## Last updated 5/5/2021
 
 # Investigating the statistical distribution of nuclear RNA reads
 # Uses sox10 nuclear RNA pulled from Trinh et al 2017 Biotagging paper: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE89670
@@ -237,31 +237,42 @@ nuc2bidir <- dplyr::mutate(nuc2bidir, size = end-start)
 nuc2bidir <- cbind(nuc2bidir,bidir_read_counts2,strand="+")
 write.table(nuc2bidir,"sox10_Zv9nuc2FlankedBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
 
-#plus strand
-feat1 <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end),strand="+")
-feat2 <- GRanges(seqnames=nuc2bidir$chr,ranges=IRanges(start=nuc2bidir$start,end=nuc2bidir$end),strand="+")  
+# Now you have raw bidirectional regions output from each strand. Get the overlap between the two (union) for reproducible regions between the biological replicates
+repmerge <- mergeByOverlaps(nuc1bidir,nuc2bidir,ignore.strand=TRUE)
+repmergedf <- data.frame(chr=c(seqnames(repmerge$gnuc1bidir),seqnames(repmerge$gnuc2bidir)),
+                        start=c(start(repmerge$gnuc1bidir),start(repmerge$gnuc2bidir)),
+                        end=c(end(repmerge$gnuc1bidir),end(repmerge$gnuc2bidir)),
+                        ID=c(paste("nuc1",1:length(repmerge),sep=""),paste("nuc2",1:length(repmerge),sep="")),
+                        score=0,
+                        strand=c(strand(repmerge$gnuc1bidir),strand(repmerge$gnuc2bidir)))
+write.table(repmergedf,file="sox10_Zv9FlankedWiderNoncodingReprodPreUnion.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 
-bidir_sox1plus <- summarizeOverlaps(features=feat1,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
+#outside of R
+module load intel/19.0.4 bedtools2
+bedtools sort -i sox10_Zv9FlankedWiderNoncodingReprodPreUnion.bed > sox10_Zv9FlankedWiderNoncodingReprodPreUnionSorted.bed
+bedtools merge -i sox10_Zv9FlankedWiderNoncodingReprodPreUnionSorted.bed -d 0 > sox10_Zv9FlankedWiderNoncodingReprodOnly.bed
+
+#LATER removed analysis by replicate, should be done just once on reproducible dataset. BELOW HAS NOT BEEN FIXED
+repl <- fread("sox10_Zv9FlankedWiderNoncodingReprodOnly.bed")
+colnames(repl) <- c("chr","start","end")
+repl <- dplyr::mutate(repl, size = end-start)
+GRrepl <- GRanges(repl)
+#plus strand
+feat <- GRanges(seqnames=GRrepl$chr,ranges=IRanges(start=GRrepl$start,end=GRrepl$end),strand="+")
+
+bidir_sox1plus <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
 bidir_sox10_counts1plus <- assay(bidir_sox1plus)
-bidir_sox2plus <- summarizeOverlaps(features=feat2,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_sox10_counts2plus <- assay(bidir_sox2plus)
 
 #minus strand
 feat1 <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end),strand="-")  
-feat2 <- GRanges(seqnames=nuc2bidir$chr,ranges=IRanges(start=nuc2bidir$start,end=nuc2bidir$end),strand="-")  
 
 bidir_sox1minus <- summarizeOverlaps(features=feat1,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
 bidir_sox10_counts1minus <- assay(bidir_sox1minus)
-bidir_sox2minus <- summarizeOverlaps(features=feat2,reads=sox10_nuc2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_sox10_counts2minus <- assay(bidir_sox2minus)
 
 counts1 <- cbind(nuc1bidir[,c(1,2,3,8,7)],plus=bidir_sox10_counts1plus, minus=bidir_sox10_counts1minus)
 counts1 <- dplyr::mutate(counts1, size = end-start)
-counts2 <- cbind(nuc2bidir[,c(1,2,3,8,7)],plus=bidir_sox10_counts2plus, minus=bidir_sox10_counts2minus)
-counts2 <- dplyr::mutate(counts2, size = end-start)
 
-write.table(counts1,file="sox10_Zv9nuc1FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
-write.table(counts2,file="sox10_Zv9nuc2FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
+write.table(counts1,file="sox10_Zv9FlankedBidirRegionsStrandedCounts.bed",quote=FALSE, row.names=FALSE,col.names=FALSE)
 
 #overlaps comparison
 allten <- fread("ATACCrossRef/sox10_BiotaggingAllClusters.bed")
@@ -290,12 +301,52 @@ cluster8 <- GRanges(sox10_8)
 cluster9 <- GRanges(sox10_9)
 cluster10 <- GRanges(sox10_10)
 
-chrplus <- dplyr::filter(plusbig,grepl("chr",chr))
-chrminus <- dplyr::filter(minusbig,grepl("chr",chr))
-chrequal <- dplyr::filter(equal,grepl("chr",chr))
-chrplus2 <- dplyr::filter(plusbig2,grepl("chr",chr))
-chrminus2 <- dplyr::filter(minusbig2,grepl("chr",chr))
-chrequal2 <- dplyr::filter(equal2,grepl("chr",chr))
+overlaps <- findOverlaps(repl,allclusters,ignore.strand=TRUE)
+withall <- repl[queryHits(overlaps),]
+write.table(withall,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsAllClusters.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster1,ignore.strand=TRUE)
+withone <- repl[queryHits(overlaps),]
+write.table(withone,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster1.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster2,ignore.strand=TRUE)
+withtwo <- repl[queryHits(overlaps),]
+write.table(withtwo,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster2.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+ 
+overlaps <- findOverlaps(repl,cluster3,ignore.strand=TRUE)
+with3 <- repl[queryHits(overlaps),]
+write.table(with3,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster3.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster4,ignore.strand=TRUE)
+with4 <- repl[queryHits(overlaps),]
+write.table(with4,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster4.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster5,ignore.strand=TRUE)
+with5 <- repl[queryHits(overlaps),]
+write.table(with5,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster5.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster6,ignore.strand=TRUE)
+with6 <- repl[queryHits(overlaps),]
+write.table(with6,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster6.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster7,ignore.strand=TRUE)
+with7 <- repl[queryHits(overlaps),]
+write.table(with7,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster7.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster8,ignore.strand=TRUE)
+with8 <- repl[queryHits(overlaps),]
+write.table(with8,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster8.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster9,ignore.strand=TRUE)
+with9 <- repl[queryHits(overlaps),]
+write.table(with9,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster9.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+overlaps <- findOverlaps(repl,cluster10,ignore.strand=TRUE)
+with10 <- repl[queryHits(overlaps),]
+write.table(with10,file="sox10_Zv9FlankedWiderNoncodingReprodOverlapsCluster10.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+chrrepl <- dplyr::filter(repl,grepl("chr",chr))
+gchrrepl <- GRanges(chrrepl)
 
 gplus <- GRanges(chrplus)
 gminus <- GRanges(chrminus)
