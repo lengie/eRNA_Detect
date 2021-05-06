@@ -1,14 +1,14 @@
 ### BidirNoncodRNA.r
 ###
-### Purpose: Load RNA-seq data as BAM, remove coding regions via GTF annotations, merge strands into overlapped regions (get TPM of these regions?), explore these. 
+### Purpose: Load RNA-seq data as BAM, remove coding regions via GTF annotations, merge strands into union-overlapped regions, explore these. 
 ###
 ###
 ### Written by Liana Engie
-### Last updated: February 2021
+### Last updated: May 2021
 ###
 ### bidirncRNA(bamfile,gtffile)
 ### Input: string chromosome number, int input_start, int input_end, string strand (either "+" or "-")
-### Output:
+### (Current) Output: bed6 file containing non-coding regions where RNA is read from both strands, consistently between two biological replicates
 
 library(Rsamtools)
 library(GenomicFeatures)
@@ -68,9 +68,58 @@ bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0
 ## Intersect outside of R
 intersectBed -sorted -S -a ct711a_150804_hets_nuc1PrimaryUnder10kMergedMinus.bed -b ct711a_150804_hets_nuc1PrimaryUnder10kMergedPlus.bed > ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersected.bed
 
+#will need to switch/reconcile
+bedtools intersect -a sox10_Zv9nuc1FlankedNoncodingUnder10kMergedPlus6.bed -b sox10_Zv9nuc1FlankedNoncodingUnder10kMergedMinus6.bed -nonamecheck > sox10_Zv9nuc1FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
+bedtools intersect -a sox10_Zv9nuc2FlankedNoncodingUnder10kMergedPlus6.bed -b sox10_Zv9nuc2FlankedNoncodingUnder10kMergedMinus6.bed -nonamecheck > sox10_Zv9nuc2FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
+	
+	
  ## Back in R   
 	intersected1 <- fread("GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
 	colnames(intersected1) <- c("chr","start","end","ID","score","strand")
+	
+	#merge the intersections for the wider
+	nuc1merge <- mergeByOverlaps(minus,plus,ignore.strand=TRUE)
+	nuc2merge <- mergeByOverlaps(minus2,plus2,ignore.strand=TRUE)
+	nuc1merged <- data.frame(chr=c(seqnames(nuc1merge$plus),seqnames(nuc1merge$minus)),
+                        start=c(start(nuc1merge$plus),start(nuc1merge$minus)),
+                        end=c(end(nuc1merge$plus),end(nuc1merge$minus)),
+                        ID="n/a",
+                        score=0,
+                        strand=c(strand(nuc1merge$plus),strand(nuc1merge$minus)))
+nuc2merged <- data.frame(chr=c(seqnames(nuc2merge$plus2),seqnames(nuc2merge$minus2)),
+                        start=c(start(nuc2merge$plus2),start(nuc2merge$minus2)),
+                        end=c(end(nuc2merge$plus2),end(nuc2merge$minus2)),
+                        ID="n/a",
+                        score=0,
+                        strand=c(strand(nuc2merge$plus2),strand(nuc2merge$minus2)))
+write.table(nuc1merged,file="sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+write.table(nuc2merged,file="sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+ 
+# outside of R
+bedtools sort -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
+bedtools merge -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed
+
+bedtools sort -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
+bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed
+
+	nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
+	nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
+	colnames(nuc1bidir) <- c("chr","start","end")
+	colnames(nuc2bidir) <- c("chr","start","end")
+
+	nuc1 <- fread("GSM2386488_sox10_nuc_combined.bed")
+	nuc2 <- fread("GSM2386489_sox10_nuc_combined.bed")
+	colnames(nuc1) <- c("chr","start","end","ID","score","strand")
+	colnames(nuc2) <- c("chr","start","end","ID","score","strand")
+	sox10_nuc1 <- GRanges(nuc1)
+	sox10_nuc2 <- GRanges(nuc2)
+
+	feat <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end))  
+	bidir_read1 <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+	bidir_read_counts1 <- assay(bidir_read1)
+	nuc1bidir <- cbind(nuc1bidir,bidir_read_counts1)
+	nuc1bidir <- dplyr::mutate(nuc1bidir, size = end-start)
+	write.table(IDasScore,"sox10_Zv9nuc1FlankedWiderBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
 	
 	feat <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end))  
 	bidir_read1 <- summarizeOverlaps(features=feat,reads=bam1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
@@ -79,39 +128,6 @@ intersectBed -sorted -S -a ct711a_150804_hets_nuc1PrimaryUnder10kMergedMinus.bed
 	intersected1 <- dplyr::mutate(intersected1, size = end-start)
 	write.table(intersected1,file="ct711aHets1PrimaryReadsBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
 }
-
-#outside of R
-bedtools sort -i ct711a_150804_hets_nuc1PrimaryUnpairedNoncoding.bed > ct711a_150804_hets_nuc1PrimaryUnpairedNoncodingSorted.bed 
-bedtools merge -i ct711a_150804_hets_nuc1PrimaryUnpairedNoncodingSorted.bed -d 0 -s > ct711a_150804_hets_nuc1PrimaryUnpairedNoncodingMerged.bed
-
-#saving after non-coding for graphical check
-chr1 <- data.frame(chr=seqnames(gbam),
-                    start <- as.integer(start(gbam)-1),
-                    end <- end(gbam),
-                    strand <- strand(gbam)
-                    )
-chr1$chr <- paste("chr",chr1$chr,sep="")
-
-#saving after merging for graphical check
-merged1 <- dplyr::filter(outsidemerged1,V1==1)
-merged1$V1 <- paste("chr",merged1$V1,sep="")
-merged1 <- data.frame(merged1$V1,merged1$V2,merged1$V3,ID="n/a",score=0,strand=merged1$V4)
-write.table(merged1,file="GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedChr1.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-
-#saving after intersecting for graphical check
-one1 <- dplyr::filter(intersected1,chr==1)
-one1$chr <- paste("chr",one1$chr,sep="")
-write.table(one1,file="ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersectedChr1.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-
-intersectedchr1 <- dplyr::filter(intersected1,chr==1)
-intersectedchr1 <- data.frame(chr=paste("chr",intersectedchr1$chr,sep=""),
-				    start=intersectedchr1$start,
-				    end=intersectedchr1$end,
-				    score=intersectedchr1$reads,
-				    ID=intersectedchr1$size,
-				    strand=intersectedchr1$strand)
-write.table(intersectedchr1,file="GRCz11Star/ct711aHets1PrimaryUnder10kBidirRegionsChr1.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-
 intersected1 <- fread("ct711a_Homoz1PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
 colnames(intersected1) <- c("chr","start","end","ID","score","strand")
 intersected2 <- fread("ct711a_Homoz2PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
