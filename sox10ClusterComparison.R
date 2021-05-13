@@ -16,10 +16,14 @@ library(gplots)
 options(scipen=999)
 
 one <- fread("GalaxyComputeMatrix_sox10RepBidirCluster1Overlaps.tabular")
+
 oneplus <- cbind(one[,1:200],one[,401:600])
 colnames(oneplus) <- c(rep("sox10nuc1plus",200),rep("sox10nuc2plus",200))
 oneminus <- cbind(one[,201:400],one[,601:800])
 colnames(oneminus) <- c(rep("sox10nuc1minus",200),rep("sox10nuc2minus",200))
+
+oneall <- one[,1:800]
+colnames(oneall) <- c(rep("sox10nuc1plus",200),rep("sox10nuc2plus",200),rep("sox10nuc1minus",200),rep("sox10nuc2minus",200))
 
 two <- fread("GalaxyComputeMatrix_sox10RepBidirCluster2Overlaps.tabular")
 three <- fread("GalaxyComputeMatrix_sox10RepBidirCluster3Overlaps.tabular")
@@ -32,7 +36,7 @@ nine <- fread("GalaxyComputeMatrix_sox10RepBidirCluster9Overlaps.tabular")
 ten <- fread("GalaxyComputeMatrix_sox10RepBidirCluster10Overlaps.tabular")
 all <- fread("GalaxyComputeMatrix_sox10RepBidirAllClustersOverlaps.tabular")
 
-map <- GenerateHeatmap(data,label1,label2,label3,label4){
+GenerateHeatmap <- function(data,label1,label2,label3,label4){
     fread(data)
     span <- length(data)-1
     plustable <- cbind(data[,1:span/4],one[,span/2+1:3*span/4]
