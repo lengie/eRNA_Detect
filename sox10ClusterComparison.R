@@ -12,6 +12,7 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
+library(gplots)
 options(scipen=999)
 
 one <- fread("GalaxyComputeMatrix_sox10RepBidirCluster1Overlaps.tabular")
@@ -35,12 +36,25 @@ map <- GenerateHeatmap(data,label1,label2,label3,label4){
     fread(data)
     span <- length(data)-1
     plustable <- cbind(data[,1:span/4],one[,span/2+1:3*span/4]
+    oneplus <- oneplus %>% replace(is.na(.), -1)
     colnames(plustable) <- c(rep(label1,span/4),rep(label2,span/4))
     minustable <- cbind(data[,span/4+1:span/2],one[,3*span/4+1:span]
+    oneminus <- oneminus %>% replace(is.na(.), -1)
     colnames(minustable) <- c(rep(label3,span/4),rep(label4,span/4))
     
     mypaletteP <- brewer.pal(9,"BuPu") 
     mypaletteM <- brewer.pal(9,"YlOrRd")
     morecolsP <- colorRampPalette(mypaletteP)
     morecolsM <- colorRampPalette(mypaletteM)
+    
+    x11() #code to open it full screen?
+                        
+    hr <- hclust(as.dist(1-cor(t(oneall), method="pearson")), method="ward.D2")
+    heatmap.2(as.matrix(oneall),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
+    heatmap.2(as.matrix(oneall),Rowv=as.dendrogram(hr),col=rev(morecolsP(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
+
+    heatmap.2(as.matrix(oneplus),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
+    heatmap.2(as.matrix(oneminus),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
+
+                        
 }
