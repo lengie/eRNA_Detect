@@ -54,10 +54,10 @@ GenerateHeatmap <- function(data,label1,label2,label3,label4){
     x11() #code to open it full screen?
                         
     hr <- hclust(as.dist(1-cor(t(oneall), method="pearson")), method="ward.D2")
-    heatmap.2(as.matrix(oneall),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
-    heatmap.2(as.matrix(oneall),Rowv=as.dendrogram(hr),col=rev(morecolsP(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
+    heatmap.2(as.matrix(oneall),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir +/-strands row scaled Ward",scale="row",trace="none",Colv=NA)
+    heatmap.2(as.matrix(oneall),Rowv=as.dendrogram(hr),col=rev(morecolsP(50)),main="Sox10 Bidir +/- strands row scaled Ward",scale="row",trace="none",Colv=NA)
 
-    heatmap.2(as.matrix(oneplus),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
+    heatmap.2(as.matrix(oneplus),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir + row scaled Ward",scale="row",trace="none",Colv=NA)
     heatmap.2(as.matrix(oneminus),Rowv=as.dendrogram(hr),col=rev(morecolsM(50)),main="Sox10 Bidir - row scaled Ward",scale="row",trace="none",Colv=NA)
 
                         
