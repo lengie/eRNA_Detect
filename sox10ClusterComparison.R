@@ -47,8 +47,8 @@ GenerateHeatmap <- function(data,label1,label2,label3,label4){
     oneminus <- oneminus %>% replace(is.na(.), -1)
     colnames(minustable) <- c(rep(label3,span/4),rep(label4,span/4))
     
-    mypaletteP <- brewer.pal(9,"BuPu") 
-    mypaletteM <- brewer.pal(9,"YlOrRd")
+    mypaletteP <- brewer.pal(9,"BuGn") 
+    mypaletteM <- brewer.pal(9,"RdPu")
     morecolsP <- colorRampPalette(mypaletteP)
     morecolsM <- colorRampPalette(mypaletteM)
     
