@@ -1,0 +1,71 @@
+### DESeqVenn
+###
+### Purpose: Get list of expressed genes and make a venn diagram of the three time point conditions
+###
+###
+### Written by Liana Engie
+### Last updated: May 2021
+###
+### Input: 
+### (Current) Output: Venn Diagram with nuber of genes expressed compared between RNA-seq experimental conditions
+
+library(GenomicRanges)
+library(GenomicFeatures)
+library(ggplot2)
+library(dplyr) 
+library(data.table)
+library(DESeq2)
+library(limma)
+options(scipen=999)
+
+gtffile <- "/panfs/qcb-panasas/engie/GRCz11EnhDet/Danio_rerio.GRCz11.99.gtf"
+txdb <- makeTxDbFromGFF(gtffile,
+                        format="gtf",
+                        circ_seqs = character()
+                        )
+genelist <- genes(txdb)
+
+filelist <- c("GRCz11Star/ct711a_150804_hets_nuc1PrimaryReads.bam",
+               "GRCz11Star/ct711a_150804_hets_nuc2PrimaryReads.bam",
+               "BiotaggingTimePts/72hpf_19_10_1/72hpf_191001_PrimaryReads.bam",
+               "BiotaggingTimePts/72hpf_19_10_29/72hpf_191029_PrimaryReads.bam",
+               "BiotaggingTimePts/96hpf_19_8_5/96hpf_190805_PrimaryReads.bam",
+               "BiotaggingTimePts/96hpf_19_9_18/96hpf_190918_PrimaryReads.bam")
+bamlist <- BamFileList(filelist)
+
+cond <- c("48","48","72","72","96","96")
+colData <- data.frame(time=cond) 
+row.names(colData) <- c("ct711a_150804_hets_nuc1PrimaryReads.bam",
+                        "ct711a_150804_hets_nuc2PrimaryReads.bam",
+                        "72hpf_191001_PrimaryReads.bam",
+                        "72hpf_191029_PrimaryReads.bam",
+                        "96hpf_190805_PrimaryReads.bam",
+                        "96hpf_190918_PrimaryReads.bam")
+
+
+# Get read counts for your regions
+overlaps <- summarizeOverlaps(features=genelist,reads=bamlist,singleEnd=FALSE,ignore.strand=FALSE) 
+genecountsassay <- assay(overlaps)
+
+deseq <- SummarizedExperiment(assays=genecountsassay, rowRanges=genelist, colData=colData)
+dds <- DESeqDataSet(deseq, design= ~time)
+dds <- DESeq(dds)
+dds <- estimateSizeFactors(dds)
+
+normalized_counts <- counts(dds, normalized=TRUE)
+
+venn_matrix <- matrix(ncol=3,nrow=32520) #taken from nrow()
+
+for (i in 1:nrow(normalized_counts)){
+    if (normalized_counts[i,1]!=0 && normalized_counts[i,2]!=0){venn_matrix[i,1]=1}
+      else {venn_matrix[i,1]=0}
+    if (normalized_counts[i,3]!=0 && normalized_counts[i,4]!=0){venn_matrix[i,2]=1}
+      else {venn_matrix[i,2]=0}
+    if (normalized_counts[i,5]!=0 && normalized_counts[i,6]!=0){venn_matrix[i,3]=1}
+      else {venn_matrix[i,3]=0}
+}
+
+colnames(venn_matrix) <- c("48hpf","72hpf","96hpf") 
+rownames(venn_matrix) <- rownames(normalized_counts)
+
+vennDiagram(venn_matrix)
