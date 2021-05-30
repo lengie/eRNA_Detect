@@ -1,7 +1,7 @@
 ## Written by Liana Engie, Dr. Scott E Fraser lab
 ## Last updated 5/11/2021
 
-# Comparing nuclear noncoding RNA, bidirectional regions to ATAC-seq crossreferenced regions
+# Comparing nuclear noncoding RNA, bidirectional regions to ATAC-seq crossreferenced regions through heatmaps of both strands
 # Uses sox10 nuclear RNA pulled from Trinh et al 2017 Biotagging paper: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE89670
 # Loads DeepTools computeMatrix tabular data and generates heat maps
 
