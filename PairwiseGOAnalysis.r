@@ -19,6 +19,7 @@ library(ggpubr)
 library(org.Dr.eg.db)
 options(scipen=999)
 
+# load the gene list from a GTF file
 gtffile <- "/panfs/qcb-panasas/engie/GRCz11EnhDet/Danio_rerio.GRCz11.99.gtf"
 txdb <- makeTxDbFromGFF(gtffile,
                         format="gtf",
@@ -26,23 +27,26 @@ txdb <- makeTxDbFromGFF(gtffile,
                         )
 xcripts <- genes(txdb)
 
-4872filelist <- c("GRCz11Star/ct711a_150804_hets_nuc1PrimaryReads.bam",
+# load the processed BAM files (not normalized, as DESeq requires)
+filelist <- c("GRCz11Star/ct711a_150804_hets_nuc1PrimaryReads.bam",
                "GRCz11Star/ct711a_150804_hets_nuc2PrimaryReads.bam",
                "BiotaggingTimePts/72hpf_19_10_1/72hpf_191001_PrimaryReads.bam",
                "BiotaggingTimePts/72hpf_19_10_29/72hpf_191029_PrimaryReads.bam")
 
-4896filelist <- c("GRCz11Star/ct711a_150804_hets_nuc1PrimaryReads.bam",
-               "GRCz11Star/ct711a_150804_hets_nuc2PrimaryReads.bam",
+filelist <- c("GRCz11Star/ct711a_150804_hets_nuc1PrimaryReads.bam",
+              "GRCz11Star/ct711a_150804_hets_nuc2PrimaryReads.bam",
                "BiotaggingTimePts/96hpf_19_8_5/96hpf_190805_PrimaryReads.bam",
                "BiotaggingTimePts/96hpf_19_9_18/96hpf_190918_PrimaryReads.bam")
 
-7292filelist <- c("BiotaggingTimePts/72hpf_19_10_1/72hpf_191001_PrimaryReads.bam",
+filelist <- c("BiotaggingTimePts/72hpf_19_10_1/72hpf_191001_PrimaryReads.bam",
                "BiotaggingTimePts/72hpf_19_10_29/72hpf_191029_PrimaryReads.bam",
                "BiotaggingTimePts/96hpf_19_8_5/96hpf_190805_PrimaryReads.bam",
                "BiotaggingTimePts/96hpf_19_9_18/96hpf_190918_PrimaryReads.bam")
 
 bamlist <- BamFileList(filelist)
 
+
+# Create the experimental condition data frame
 #cond <- c("48","48","72","72")
 #cond <- c("48","48","96","96")
 #cond <- c("72","72","96","96")
@@ -61,13 +65,14 @@ row.names(colData) <- c("72hpf_191001_PrimaryReads.bam",
                         "96hpf_190805_PrimaryReads.bam",
                         "96hpf_190918_PrimaryReads.bam")
 
-# Get read counts for your regions
+# Get read counts for the genes for all conditions
 overlaps <- summarizeOverlaps(features=xcripts,reads=bamlist,singleEnd=FALSE,ignore.strand=FALSE) 
 genecountsassay <- assay(overlaps)
 
 deseq <- SummarizedExperiment(assays=genecountsassay, rowRanges=xcripts, colData=colData)
 dds <- DESeqDataSet(deseq, design= ~time)
 
+# Remove genes with no reads in all conditions
 keep <- rowSums(counts(dds)) > 1
 dds <- dds[keep,]
 ddsdf <- as.data.frame(assay(dds))
@@ -77,10 +82,11 @@ colnames(ddsdf) <- colnames(dds)
 #write.table(ddsdf,"BiotaggingTimePts/tpm4_devtimepts4896_genecounts.csv",sep="\t",quote=FALSE,row.names=TRUE,col.names=TRUE)
 #write.table(ddsdf,"BiotaggingTimePts/tpm4_devtimepts7296_genecounts.csv",sep="\t",quote=FALSE,row.names=TRUE,col.names=TRUE)
 
+# Differentially expressed genes
 fdr.threshold <- 0.1
 ddsnew <- DESeq(dds)
 res <- results(ddsnew, independentFiltering=FALSE) 
-# assayed.genes <- rownames(res) check this
+
 de.genes <- rownames(res)[ which(res$padj < fdr.threshold) ] 
 write.table(rownames(dds),"BiotaggingTimePts/tpm4_devtimepts4872_genenames.csv",sep="\t",quote=FALSE)
 write.table(de.genes,"BiotaggingTimePts/tpm4_devtimepts4872_DEgenenames.csv",sep="\t",quote=FALSE)
@@ -91,7 +97,7 @@ write.table(de.genes,"BiotaggingTimePts/tpm4_devtimepts4896_DEgenenames.csv",sep
 write.table(rownames(dds),"BiotaggingTimePts/tpm4_devtimepts7296_genenames.csv",sep="\t",quote=FALSE)
 write.table(de.genes,"BiotaggingTimePts/tpm4_devtimepts7296_DEgenenames.csv",sep="\t",quote=FALSE)
 
-
+# Create a binary matrix for the genes expressed in each condition
 assay.genes <- rownames(dds)
 gene.vector=as.integer(assay.genes%in%de.genes)
 names(gene.vector)=assay.genes
@@ -100,17 +106,26 @@ write.table(gene.vector,"BiotaggingTimePts/tpm4_devtimepts4896_goseqinput.csv",s
 write.table(gene.vector,"BiotaggingTimePts/tpm4_devtimepts7296_goseqinput.csv",sep="\t",quote=FALSE,col.names=TRUE)
 
 ## get the gene lengths for bias analysis
-xcriptsKept <- xcripts[genecounts$V1,]
-lengthData <- width(xcriptsKept)
+xcriptsKept4872 <- xcripts[1:length(dds),]
+xcriptsKept4896 <- xcripts[1:length(dds),]
+xcriptsKept7296 <- xcripts[1:length(dds),]
+
+lengthData <- width(xcriptsKept4872)
+lengthData <- width(xcriptsKept4896)
+lengthData <- width(xcriptsKept7296)
+
 medianLengthData <- median(lengthData)
 pwf <- goseq::nullp(gene.vector,bias.data=lengthData)
+#plot+title("48hpf vs 72hpf")
+#plot+title("48hpf vs 96hpf")
+#plot+title("72hpf vs 96hpf")
 
 write.table(pwf,"BiotaggingTimePts/tpm4_devtimepts4872_goseqPWF.csv",sep="\t",quote=FALSE,col.names=TRUE)
 write.table(pwf,"BiotaggingTimePts/tpm4_devtimepts4896_goseqPWF.csv",sep="\t",quote=FALSE,col.names=TRUE)
 write.table(pwf,"BiotaggingTimePts/tpm4_devtimepts7296_goseqPWF.csv",sep="\t",quote=FALSE,col.names=TRUE)
 
 # Using Wallenius approximation
-GO.wall <- goseq::goseq(pwf,"danRer7","ensGene")
+GO.wall <- goseq::goseq(pwf,"danRer11","ensGene")
 
 enriched.GO=GO.wall$category[GO.wall$over_represented_pvalue<.05]
 write.table(GO.wall,"BiotaggingTimePts/tpm4_devtimepts4872_goseqGOWall.csv",sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
@@ -119,7 +134,8 @@ write.table(GO.wall,"BiotaggingTimePts/tpm4_devtimepts7296_goseqGOWall.csv",sep=
 
 capture.output(for(go in enriched.GO[1:length(enriched.GO)]) { print(GOTERM[[go]])
 cat("--------------------------------------\n")
-}, file="BiotaggingTimePts/tpm4_devtimepts4872_goseqEnriched.txt")
+}
+, file="BiotaggingTimePts/tpm4_devtimepts4872_goseqEnriched.txt")
 
 capture.output(for(go in enriched.GO[1:length(enriched.GO)]) { print(GOTERM[[go]])
 cat("--------------------------------------\n")
