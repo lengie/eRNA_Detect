@@ -29,7 +29,43 @@ bidirncRNAwGTF{
                                circ_seqs = character()
                                )
 	seqlevelsStyle(txdb) <- "UCSC"
-	coding <- cds(txdb)
+	exons <- exons(txdb)
+	utr5 <- fiveUTRsByTranscript(txdb)
+	utr3 <- threeUTRsByTranscript(txdb)
+ 
+	utr5df <- as.data.frame(utr5)
+	utr5minus <- dplyr::filter(utr5df,strand=="-")
+	utr5plus <- dplyr::filter(utr5df,strand=="+")
+	utr5minus <- data.frame(seqnames=utr5minus$seqnames,
+				start=utr5minus$start,
+				end=utr5minus$end+500,
+				strand=utr5minus$strand,
+				exon_id=utr5minus$exon_id,
+				exon_name=utr5minus$exon_name)
+	utr5plus <- data.frame(seqnames=utr5plus$seqnames,
+			       start=utr5plus$start-500,
+			       end=utr5plus$end,
+			       strand=utr5plus$strand,
+			       exon_id=utr5plus$exon_id,
+			       exon_name=utr5plus$exon_name)
+
+	utr3df <- as.data.frame(utr3)
+	utr3minus <- dplyr::filter(utr3df,strand=="-")
+	utr3plus <- dplyr::filter(utr53f,strand=="+")
+	utr3minus <- data.frame(seqnames=utr3minus$seqnames,
+				start=utr3minus$start-500,
+				end=utr3minus$end,
+				strand=utr3minus$strand,
+				exon_id=utr3minus$exon_id,
+				exon_name=utr3minus$exon_name)
+	utr3plus <- data.frame(seqnames=utr5minus$seqnames,
+			       start=utr5minus$start,
+			       end=utr5minus$end+500,
+			       strand=utr5minus$strand,
+			       exon_id=utr5minus$exon_id,
+			       exon_name=utr5minus$exon_name)
+
+	coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
 
 	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
     	bamread <- readGAlignmentPairs(bamfile, param=ScanBamParam(flag=flag))
@@ -113,6 +149,11 @@ bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
 	colnames(nuc2) <- c("chr","start","end","ID","score","strand")
 	sox10_nuc1 <- GRanges(nuc1)
 	sox10_nuc2 <- GRanges(nuc2)
+	
+	# make sure merge did not add an coding regions
+	overlaps <- findOverlaps(X,coding,ignore.strand=FALSE)
+	hits <- X[-queryHits(overlaps),]
+	#REPEAT 
 
 	feat <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end))  
 	bidir_read1 <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
@@ -191,6 +232,18 @@ hetsintersected1counts <- dplyr::mutate(hetsintersected1counts, size = end-start
 hetsintersected2counts <- cbind(hetsintersected2,bothstrands=bidir_hets_counts2, plus=bidir_hets_counts2plus, minus=bidir_hets_counts2minus)
 hetsintersected2counts <- dplyr::mutate(hetsintersected2counts, size = end-start)
 
+## Keep only regions that are reprodicuble over replicates NEED TO ADAPT
+repmerge <- mergeByOverlaps(intersected1,intersected2,ignore.strand=TRUE)
+repmergedf <- data.frame(chr=c(seqnames(repmerge$intersected1),seqnames(repmerge$intersected2)),
+                        start=c(start(repmerge$intersected1),start(repmerge$intersected2)),
+                        end=c(end(repmerge$intersected1),end(repmerge$intersected2)),
+                        ID=c(paste("nuc1",1:length(repmerge),sep=""),paste("nuc2",1:length(repmerge),sep="")),
+                        score=0,
+                        strand=c(strand(repmerge$intersected1),strand(repmerge$intersected2)))
+write.table(repmergedf,file="FlankedWiderNoncodingReprodPreUnion.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+bedtools sort -i FlankedWiderNoncodingReprodPreUnion.bed > FlankedWiderNoncodingReprodPreUnionSorted.bed
+bedtools merge -i FlankedWiderNoncodingReprodPreUnionSorted.bed -d 0 > FlankedWiderNoncodingReprodOnly.bed
 
 # TFBS alignment
 library(BSgenome.Drerio.UCSC.danRer11)
