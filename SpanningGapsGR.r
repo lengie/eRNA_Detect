@@ -111,15 +111,16 @@ unique <- unique(subjectHits(overlap500))
 length(unique)
 length(unique)/length(allclusters)
 
-grlist <- c(comb,comb50,comb100,comb500)
+grlist <- GRangesList(comb,comb50,comb100,comb500)
+int <- c("","50bpRem","100Rem","500Rem")
 clist <- GRangesList(allclusters,cluster1,cluster2,cluster3,cluster4,cluster5,cluster6,cluster7,cluster8,cluster9,cluster10)
-cnames <- c("allclusters","cluster1","cluster2","cluster3","cluster4","cluster5","cluster6","cluster7","cluster8","cluster9","cluster10")
+cnames <- c("allclusters","cluster1","cluster2","cluster3","cluster4","cluster5","cluster6","cluster7","cluster8","cluster9","cluster10") 
 for(j in 1:length(grlist)){
     for(i in 1:length(clist)){
         overlaps <- findOverlaps(grlist[j],clist[i],ignore.strand=TRUE)
         save <- grlist[j][queryHits(overlaps),]
         print(sumstat(save))
-        file <- paste("sox10_Zv9FlankedWiderNoncodingReprodOverlaps150Flank",grlist[j],clist[i],".bed",sep="")
+        file <- paste("sox10_Zv9FlankedWiderNoncodingReprodOverlaps150Flank",int[j],cnames[i],".bed",sep="")
         write.table(save,file,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
     }
  }
