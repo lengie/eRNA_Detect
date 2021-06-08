@@ -1,6 +1,8 @@
 ### PairwiseGOAnalysis.r
 ###
 ### Purpose: Gene ontology analyses between conditions: 48hpf, 72hpf, 96hpf
+### Used package GoSeq after finding differential expression with DESeq2. 
+### Corrected for gene length bias and a Wallenius approximation to calculate p-values when fetching GO annotations. Enriched GO terms had pval>.5
 ###
 ###
 ### Written by Liana Engie
@@ -17,6 +19,7 @@ library(data.table)
 library(DESeq2)
 library(ggpubr)
 library(goseq)
+library(GO.db)
 library(org.Dr.eg.db)
 options(scipen=999)
 
