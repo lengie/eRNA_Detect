@@ -31,6 +31,7 @@ sox10_nuc1plus <- fread(sox10_nuc1plusfile)
 sox10_nuc2minus <- fread(sox10_nuc2minusfile) 
 sox10_nuc2plus <- fread(sox10_nuc2plusfile) 
 
+lapply(c(sox10_nuc1minus,sox10_nuc1plus,sox10_nuc2minus,sox10_nuc1plus),colnames(x) <- c("seqnames","start","end","score"))
 colnames(sox10_nuc1minus) <- c("seqnames","start","end","score")
 colnames(sox10_nuc2minus) <- c("seqnames","start","end","score")
 colnames(sox10_nuc2plus) <- c("seqnames","start","end","score")
