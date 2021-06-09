@@ -69,7 +69,7 @@ row.names(colData) <- c("72hpf_191001_PrimaryReads.bam",
                           "96hpf_190805_PrimaryReads.bam",
                           "96hpf_190918_PrimaryReads.bam")
 
-function(filelist,features,label,colData){
+PairwiseGOAnalysis <- function(filelist,features,label,colData){
   bamlist <- BamFileList(filelist)
 
   # Get read counts for the genes for all conditions
@@ -104,7 +104,7 @@ function(filelist,features,label,colData){
   write.table(gene.vector,filen3,sep="\t",quote=FALSE,col.names=TRUE)
 
   ## get the gene lengths for bias analysis
-  xcriptsKept <- xcripts[1:length(dds),]
+  xcriptsKept <- features[1:length(dds),]
   
   lengthData <- width(xcriptsKept)
   medianLengthData <- median(lengthData)
@@ -141,6 +141,40 @@ function(filelist,features,label,colData){
   abline(0,1,col=3,lty=2)
 }
 
+### separating up and down regulated genes
+fdr.threshold <- 0.1
+FC.threshold <- 2
+
+DEupdown <- function(df,label){
+    de.genes <- df[ df$padj < fdr.threshold, ]
+    up <- subset(de.genes, log2FC > FC.threshold)  
+    down <- subset(de.genes, log2FC < -FC.threshold)
+
+    write.table(up,paste("tpm4_devtimepts_DE",label,"up.csv",sep=""),sep="\t",quote=FALSE)
+    write.table(down,paste("tpm4_devtimepts_DE",label,"down.csv",sep=""),sep="\t",quote=FALSE)
+    return(list(up,down))
+}
+xcriptsKept.up <- features[names(features) %in% assay.genes.up, ]
+lengthData.up <- width(xcriptsKept.up)
+
+upanddown <- function(genenames){
+    genecounts <- fread(genenames)
+    xcriptsKept <- features[genecounts$V1,]
+    lengthData <- width(xcriptsKept)
+
+    pwf <- goseq::nullp(gene.vector,bias.data=lengthData) 
+    pwf.down  = nullp(gene.vector, "danRer11", "ensGene", bias.data = lengthData.down)
+    pwf.up  = nullp(gene.vector, "danRer11", "ensGene", bias.data = lengthData.up) 
+}
+
+GO.wall.up <- goseq(pwf.up,"danRer11","ensGene")
+GO.wall.up$padj <- p.adjust(GO.wall.up$over_represented_pvalue, method="BH")
+GO.wall.up
+GO.wall.up <- subset(GO.wall.up, GO.wall.up$padj<.05)
+
+GO.wall.down <- goseq(pwf.down, "hg38","ensGene")
+GO.wall.down$padj <- p.adjust(GO.wall.down$over_represented_pvalue, method="BH")
+GO.wall.down <- subset(GO.wall.down, GO.wall.down$padj<.05) }
 
  ###example
 
