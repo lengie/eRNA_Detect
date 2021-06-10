@@ -46,6 +46,19 @@ remcoding <- function(gr){
     return(hits)
 }
 
+#make sure that adding flanking regions doesn't go beyond chromosome length
+#(note: need to make this faster than nested for loops)
+chrLimitCheck <- function(df,gen){
+    temp <- c()
+    limit <- getChromInfoFromUCSC(gen)
+    for(i in 1:nrow(df)){
+        for(j in 1:nrow(limit)){
+            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){ test3$end[i]=limit$size[j]  
+               if(df$start[i]>limit$size[j]) temp=c(temp,i)}
+    df <- df[-temp,]
+    return(df)
+}}
+
 ##
 # loading reproducible bidirectional regions and cluster list
 repl <- fread("sox10_Zv9FlankedWiderNoncodingReprodOnly.bed")
@@ -72,6 +85,7 @@ spanGap <- function(repl,threshold,gap){
     adj$end <- adj$end + gap
     #make sure we don't have negative indices
     adj <- nonzero(adj)
+    adj <- chrLimitCheck(adj,"danRer7")
     
     #combine flanked regions into original and make sure there's no coding regions added back in
     comb <- GenomicRanges::union(GRanges(adj),grepl)
