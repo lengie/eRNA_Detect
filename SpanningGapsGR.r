@@ -53,11 +53,30 @@ chrLimitCheck <- function(df,gen){
     limit <- getChromInfoFromUCSC(gen)
     for(i in 1:nrow(df)){
         for(j in 1:nrow(limit)){
-            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){ test3$end[i]=limit$size[j]  
-               if(df$start[i]>limit$size[j]) temp=c(temp,i)}
-    df <- df[-temp,]
+            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
+                df$end[i]=limit$size[j]  
+               if(df$start[i]>limit$size[j]) temp=c(temp,i)
+            }
+        if(is.null(temp)==FALSE) df <- df[-temp,]
+        }
+    }
     return(df)
-}}
+} 
+
+#having some null issues on the above
+chrLimitCheck <- function(df,gen){
+    temp <- c()
+    limit <- getChromInfoFromUCSC(gen)
+    for(i in 1:nrow(df)){
+        for(j in 1:nrow(limit)){
+            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
+                df$end[i]=limit$size[j]  
+            }
+        }
+    }
+    return(df)
+} 
+
 
 ##
 # loading reproducible bidirectional regions and cluster list
