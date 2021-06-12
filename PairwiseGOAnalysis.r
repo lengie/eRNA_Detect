@@ -42,7 +42,7 @@ filelist <- c("GRCz11Star/ct711a_150804_hets_nuc1PrimaryReads.bam",
               "GRCz11Star/ct711a_150804_hets_nuc2PrimaryReads.bam",
                "BiotaggingTimePts/96hpf_19_8_5/96hpf_190805_PrimaryReads.bam",
                "BiotaggingTimePts/96hpf_19_9_18/96hpf_190918_PrimaryReads.bam")
-label <- c("4872")
+label <- c("4896")
 
 filelist <- c("BiotaggingTimePts/72hpf_19_10_1/72hpf_191001_PrimaryReads.bam",
                "BiotaggingTimePts/72hpf_19_10_29/72hpf_191029_PrimaryReads.bam",
@@ -128,6 +128,36 @@ DEupdown <- function(df,label,log2FC,fdr.threshold){
         write.table(pwf,filepwf,sep="\t",quote=FALSE,col.names=TRUE)
     }
 }
+
+for(i in 1:2){
+  # Using Wallenius approximation
+  GO.wall <- goseq::goseq(plist[[i]],"danRer11","ensGene")
+
+  enriched.GO=GO.wall$category[GO.wall$over_represented_pvalue<.05]
+  filegw <- paste("Pairwise/tpm4_devtimepts",label,"_goseqGOWall.csv",sep="")
+  write.table(GO.wall,filegw,sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
+  labelupdown <- paste(label,l[i],sep="")
+  filen <- paste("Pairwise/tpm4_devtimepts",labelupdown,"_goseqEnriched.txt",sep="")
+  capture.output(for(go in enriched.GO[1:length(enriched.GO)]) { print(GOTERM[[go]])
+  cat("--------------------------------------\n")
+  }
+  , file=filen)
+}
+
+  # random sampling to check against the Wallenius approx, if you want it
+  GO.samp <- goseq::goseq(pwf,"danRer7","ensGene",method="Sampling",repcnt=1000)
+  plot(log10(GO.wall[,2]), log10(GO.samp[match(GO.wall[,1],GO.samp[,1]),2]),
+      xlab="log10(Wallenius p-values)",ylab="log10(Sampling p-values)",
+      xlim=c(-3,0))
+  abline(0,1,col=3,lty=2)
+
+  GO.samp <- goseq::goseq(pwf,"danRer7","ensGene",method="Sampling",use_genes_without_cat=TRUE,repcnt=1000)
+
+  plot(log10(GO.wall[,2]), log10(GO.samp[match(GO.wall[,1],GO.samp[,1]),2]),
+      xlab="log10(Wallenius p-values)",ylab="log10(Sampling p-values)",main="Random Sampling INCLUDING uncat genes",
+      xlim=c(-3,0))
+  abline(0,1,col=3,lty=2)
+
 
 
   ## get the gene lengths for bias analysis
