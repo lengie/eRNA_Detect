@@ -107,26 +107,28 @@ PairwiseRunDESeq <- function(filelist,features,label,colData){
 }
 
 DEupdown <- function(df,label,log2FC,fdr.threshold){
-    de.genes <- df[ df$padj < fdr.threshold, ]
-    up <- subset(de.genes, log2FoldChange > log2FC)  
-    down <- subset(de.genes, log2FoldChange < -log2FC)
+    DE <- df[ df$padj < fdr.threshold, ]
+    up <- subset(DE, log2FoldChange > log2FC)  
+    down <- subset(DE, log2FoldChange < -log2FC)
 
     write.table(up,paste("tpm4_devtimepts_DE",label,"up.csv",sep=""),sep="\t",quote=FALSE)
     write.table(down,paste("tpm4_devtimepts_DE",label,"down.csv",sep=""),sep="\t",quote=FALSE)
     return(list(up,down))
-
+    assay.genes <- names(res)
     for(i in 1:2){
-        assay.genes <- rownames(list(up,down)[[i]])
-        gene.vector=as.integer(assay.genes%in%de.genes)
-        names(gene.vector)=assay.genes
+        de.genes <- rownames(list(up,down)[[i]])
+        gene.vector=as.integer(as.matrix(assay.genes)%in%de.genes)
+        names(gene.vector)=as.matrix(assay.genes)
         xcriptsKept <- features[names(features) %in% assay.genes,]
         lengthData <- width(xcriptsKept)
-        pwf <- goseq::nullp(gene.vector, "danRer11", "ensGene", bias.data=lengthData)
+        pwfn <- paste("pwf",l[i],sep="")
+        assign(pwfn,goseq::nullp(gene.vector, "danRer11", "ensGene", bias.data=lengthData))   
         l <- c("up","down")
         labelupdown <- paste(label,l[i],sep="")
         filepwf <- paste("tpm4_devtimepts",labelupdown,"_goseqPWF.csv",sep="")
         write.table(pwf,filepwf,sep="\t",quote=FALSE,col.names=TRUE)
     }
+    plist <- list(pwfup,pwfdown)
 }
 
 for(i in 1:2){
