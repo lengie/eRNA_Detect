@@ -104,7 +104,7 @@ PairwiseGOAnalysis <- function(filelist,features,label,colData){
   write.table(gene.vector,filen3,sep="\t",quote=FALSE,col.names=TRUE)
 
   ## get the gene lengths for bias analysis
-  xcriptsKept <- features[1:length(dds),]
+  xcriptsKept <- features[names(features) %in% assay.genes, ]
   
   lengthData <- width(xcriptsKept)
   medianLengthData <- median(lengthData)
