@@ -103,6 +103,33 @@ PairwiseGOAnalysis <- function(filelist,features,label,colData){
   filen3 <- paste("tpm4_devtimepts",label,"_goseqinput.csv",sep="")
   write.table(gene.vector,filen3,sep="\t",quote=FALSE,col.names=TRUE)
 
+  return(res)
+}
+
+DEupdown <- function(df,label,log2FC,fdr.threshold){
+    de.genes <- df[ df$padj < fdr.threshold, ]
+    up <- subset(de.genes, log2FoldChange > log2FC)  
+    down <- subset(de.genes, log2FoldChange < -log2FC)
+
+    write.table(up,paste("tpm4_devtimepts_DE",label,"up.csv",sep=""),sep="\t",quote=FALSE)
+    write.table(down,paste("tpm4_devtimepts_DE",label,"down.csv",sep=""),sep="\t",quote=FALSE)
+    return(list(up,down))
+
+    for(i in 1:2){
+        assay.genes <- rownames(list(up,down)[[i]])
+        gene.vector=as.integer(assay.genes%in%de.genes)
+        names(gene.vector)=assay.genes
+        xcriptsKept <- features[names(features) %in% assay.genes,]
+        lengthData <- width(xcriptsKept)
+        pwf <- goseq::nullp(gene.vector, "danRer11", "ensGene", bias.data=lengthData)
+        l <- c("up","down")
+        labelupdown <- paste(label,l[i],sep="")
+        filepwf <- paste("tpm4_devtimepts",labelupdown,"_goseqPWF.csv",sep="")
+        write.table(pwf,filepwf,sep="\t",quote=FALSE,col.names=TRUE)
+    }
+}
+
+
   ## get the gene lengths for bias analysis
   xcriptsKept <- features[names(features) %in% assay.genes, ]
   
@@ -145,19 +172,7 @@ PairwiseGOAnalysis <- function(filelist,features,label,colData){
 fdr.threshold <- 0.1
 FC.threshold <- 2
 
-DEupdown <- function(df,label){
-    de.genes <- df[ df$padj < fdr.threshold, ]
-    up <- subset(de.genes, log2FC > FC.threshold)  
-    down <- subset(de.genes, log2FC < -FC.threshold)
-
-    write.table(up,paste("tpm4_devtimepts_DE",label,"up.csv",sep=""),sep="\t",quote=FALSE)
-    write.table(down,paste("tpm4_devtimepts_DE",label,"down.csv",sep=""),sep="\t",quote=FALSE)
-    return(list(up,down))
-}
-xcriptsKept.up <- features[names(features) %in% assay.genes.up, ]
-lengthData.up <- width(xcriptsKept.up)
-
-upanddown <- function(genenames){
+upanddownfile <- function(genenames){
     genecounts <- fread(genenames)
     xcriptsKept <- features[genecounts$V1,]
     lengthData <- width(xcriptsKept)
