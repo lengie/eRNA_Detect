@@ -69,7 +69,7 @@ row.names(colData) <- c("72hpf_191001_PrimaryReads.bam",
                           "96hpf_190805_PrimaryReads.bam",
                           "96hpf_190918_PrimaryReads.bam")
 
-PairwiseGOAnalysis <- function(filelist,features,label,colData){
+PairwiseRunDESeq <- function(filelist,features,label,colData){
   bamlist <- BamFileList(filelist)
 
   # Get read counts for the genes for all conditions
@@ -145,13 +145,13 @@ for(i in 1:2){
 }
 
   # random sampling to check against the Wallenius approx, if you want it
-  GO.samp <- goseq::goseq(pwf,"danRer7","ensGene",method="Sampling",repcnt=1000)
+  GO.samp <- goseq::goseq(pwf,"danRer11","ensGene",method="Sampling",repcnt=1000)
   plot(log10(GO.wall[,2]), log10(GO.samp[match(GO.wall[,1],GO.samp[,1]),2]),
       xlab="log10(Wallenius p-values)",ylab="log10(Sampling p-values)",
       xlim=c(-3,0))
   abline(0,1,col=3,lty=2)
 
-  GO.samp <- goseq::goseq(pwf,"danRer7","ensGene",method="Sampling",use_genes_without_cat=TRUE,repcnt=1000)
+  GO.samp <- goseq::goseq(pwf,"danRer11","ensGene",method="Sampling",use_genes_without_cat=TRUE,repcnt=1000)
 
   plot(log10(GO.wall[,2]), log10(GO.samp[match(GO.wall[,1],GO.samp[,1]),2]),
       xlab="log10(Wallenius p-values)",ylab="log10(Sampling p-values)",main="Random Sampling INCLUDING uncat genes",
