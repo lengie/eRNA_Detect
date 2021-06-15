@@ -115,12 +115,13 @@ DEupdown <- function(df,label,log2FC,fdr.threshold){
     write.table(down,paste("tpm4_devtimepts_DE",label,"down.csv",sep=""),sep="\t",quote=FALSE)
     return(list(up,down))
     assay.genes <- names(res)
-    for(i in 1:2){
+    xcriptsKept <- features[names(features) %in% assay.genes,]
+    lengthData <- width(xcriptsKept)
+    
+  for(i in 1:2){
         de.genes <- rownames(list(up,down)[[i]])
         gene.vector=as.integer(as.matrix(assay.genes)%in%de.genes)
         names(gene.vector)=as.matrix(assay.genes)
-        xcriptsKept <- features[names(features) %in% assay.genes,]
-        lengthData <- width(xcriptsKept)
         pwfn <- paste("pwf",l[i],sep="")
         assign(pwfn,goseq::nullp(gene.vector, "danRer11", "ensGene", bias.data=lengthData))   
         l <- c("up","down")
