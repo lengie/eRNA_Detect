@@ -30,6 +30,9 @@ mds$eig
 # transform the Eigen values into percentage
 eig_pc <- mds$eig * 100 / sum(mds$eig)
 
+write.table(eig_pc,"sox10_BiotaggingAllClustersPCA_eigpc.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(mds,"sox10_BiotaggingAllClustersPCA_mds.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+
 # plot the PCA
 png(file="PCA_PropExplainedVariance.png")
 barplot(eig_pc,
@@ -56,19 +59,23 @@ bins <- rep(c(paste(seq(-16,-1,by=1),"plus",sep=""),
             paste(seq(-16,-1,by=1),"minus",sep=""),
             paste(seq(1,16,by=1),"minus",sep="")),
             2)            
-col <- c()
-matrix <- data.frame()
-for(i in 1:10){
-     file <- paste("ATACCrossRef/Galaxy-[Biot_cluster",i,"_1.6kb_100bp__Heatmap_values].tabular",sep="")
-     tab <- fread(file)
-     matrix <- rbind(matrix,tab[,1:32],use.names=FALSE)
+
+one <- fread("ATACCrossRef/Galaxy351-[Biot_cluster1_1.6kb_100bp__Heatmap_values].tabular",header=FALSE)
+df <- one[,1:32]
+col <- paste("cluster1_",1:nrow(one),sep="")
+for(i in 2:10){
+     tab <- fread(filelist[i],header=FALSE)
+     df <- rbind(df,tab[,1:32],use.names=FALSE)
      col <- c(col,paste("cluster",i,"_",1:nrow(tab),sep=""))
 }
 
+matrix <- as.matrix(df)
 row.names(matrix) <- col
-colnames(matrix) <- bins
+colnames(matrix) <- bins    
 
 mds <- cmdscale(dist(matrix), k=3, eig=TRUE)
 mds$eig
 # transform the Eigen values into percentage
 eig_pc <- mds$eig * 100 / sum(mds$eig)
+
+
