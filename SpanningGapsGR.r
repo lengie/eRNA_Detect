@@ -155,3 +155,35 @@ for(j in 1:length(grlist)){
         write.table(save,file,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
     }
  }
+
+
+spanNearestGap <- function(repl,threshold,gap,regionLimit){
+    # remove reads under threshold size
+    rm <- dplyr::filter(repl,size>threshold)
+    
+    # which neighbor is nearest, and how far?
+    replgr <- GRanges(rm)
+    ndist <- GenomicRanges::distanceToNearest(replgr)
+    adj <- GRanges(rm[queryHits(ndist),]) #should have no NAs
+    nearest <- GenomicRanges::nearest(adj) #should have no gaps from NAs  
+    
+    for(i in 1:length(nearest)){
+        if(mcols(adj)[i,]<regionLimit && mcols(adj)[nearest[i],]<regionLimit && nearest[i]<gap){
+            #preceding is nearest
+            if(i>nearest[i]){ 
+                start(adj)[i] = start(adj)[nearest(i)]
+                }
+            elseif(i<nearest[i]) #following is the nearest
+                end(adj)[i] = end(adj)[nearest(i)] #will capture if several are close to each other in a row
+        }
+    }
+    
+    #make sure we don't have negative indices
+    adj <- nonzero(adj)
+    adj <- chrLimitCheck(adj,"danRer7")
+    
+    #combine flanked regions into original and make sure there's no coding regions added back in
+    comb <- GenomicRanges::union(GRanges(adj),replgr)
+    comb <- remcoding(comb)
+    return(comb)
+}
