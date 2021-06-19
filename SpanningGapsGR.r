@@ -10,20 +10,12 @@
 ### Input: string chromosome number, int input_start, int input_end, string strand (either "+" or "-")
 ### (Current) Output: bed6 file containing non-coding regions where RNA is read from both strands, consistently between two biological replicates
 
-library(Rsamtools)
+library(GenomicRanges)
 library(GenomicFeatures)
 library(GenomicAlignments) 
 library(ggplot2)
 library(dplyr) 
 library(data.table)
-library(bedr)
-options(scipen=999)
-
-library(dplyr) 
-library(GenomicFeatures)
-library(GenomicRanges)
-library(data.table)
-library(ggplot2)
 options(scipen=999)
 
 ## Useful functions
@@ -86,6 +78,11 @@ repl <- mutate(repl,size=end-start)
 allten <- fread("ATACCrossRef/sox10_BiotaggingAllClusters.bed")
 colnames(allten) <- c("chr","start","end","size","strand","counts","size")
 allclusters <- GRanges(allten)
+
+
+codes <- fread("Zv9ExonsUTRs500bpFlanking.bed")
+colnames(codes) <- c("chr","start","end","size","strand","ID","score") 
+coding <- GRanges(codes)
 
 spanGap <- function(repl,threshold,gap){
     # remove reads under threshold size
