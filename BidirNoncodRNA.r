@@ -10,13 +10,11 @@
 ### Input: string chromosome number, int input_start, int input_end, string strand (either "+" or "-")
 ### (Current) Output: bed6 file containing non-coding regions where RNA is read from both strands, consistently between two biological replicates
 
-library(Rsamtools)
 library(GenomicFeatures)
 library(GenomicAlignments) 
 library(ggplot2)
 library(dplyr) 
 library(data.table)
-library(bedr)
 options(scipen=999)
 
 bam1file <- "ct711a_150804_hets_nuc1PrimaryReads.bam"
