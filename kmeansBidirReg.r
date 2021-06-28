@@ -91,20 +91,21 @@ clustercol <- stringr::str_replace_all(clusterno,
                                         setNames(c("gray","purple","black","gold","orange","red","magenta","green","green4","cyan","cornflowerblue"),
                                                  as.character(c(11,10,1:9))))
 
-# sample data
-set.seed(234)
-ind <- sample(dim(noZ)[2], 1000)
-samp <- noZ[,ind]
-colors_to_use <- clustercol[ind]
-
-# pvcluster and make dendrograms
-test <- pvclust(samp,method.hclust="centroid",method.dist="cor")
-plotd <- as.dendrogram(test)
-colors_to_use <- colors_to_use[order.dendrogram(plotd)]
-dendnew <- assign_values_to_leaves_edgePar(dend=plotd, value = colors_to_use, edgePar = "col") %>% set("labels_cex", 0)  
-
-png(file=pvclust_ReprodUnd1500bpRandSamp234.png")
-    plot(dendnew,main="pvclust with leaves clustered by color") 
-dev.off()
-
+run.pvclust.iterations <- function(matrix,colorvector,iterations){
+    for(i in 1:iterations){
+        seed <- runif(1, min = 100, max = 999)
+        set.seed(seed)
+        print(seed) #maybe make a not-verbose option
+        samp <- matrix[,ind]
+        colors_to_use <- colorvector[ind]
+        clust <- pvclust(samp,method.hclust="centroid",method.dist="cor")
+        plotd <- as.dendrogram(test)
+        colors_to_use <- colors_to_use[order.dendrogram(plotd)]
+        dendnew <- assign_values_to_leaves_edgePar(dend=plotd, value = colors_to_use, edgePar = "col") %>% set("labels_cex", 0)  
+    
+        pngfile <- paste("pvclust_ReprodUnd1500bpRandSamp",seed,".png",sep="")
+            plot(dendnew,main="pvclust with leaves clustered by color") 
+        dev.off()
+    }
+}
 
