@@ -18,6 +18,8 @@ library(dplyr)
 library(data.table)
 library(pvclust)
 library(parallel)
+library(dendextend)
+library(stringr)
 options(scipen=999)
 
 ##regions under 1.5kb
@@ -78,6 +80,31 @@ for(i in 1:10){
     }
 }
 
-# sampling 10,000 lines 
-samp <- under15[,sample(dim(under15)[2], 10000)]
-test <- pvclust(as.dist(1-cor(t(samp))),method.hclust="centroid",method.dist="cor")
+# remove all columns with no reads at all
+noZ <- under15[, colSums(under15 != 0) > 0]
+
+# set colors for leaves of dendrogram
+clusterno <- colnames(noZ)
+clusterno <- replace(clusterno,grepl("Bidir",clusterno),11)
+clusterno <- gsub('cluster([0-9]+)_.*','\\1',clusterno)
+clustercol <- stringr::str_replace_all(clusterno, 
+                                        setNames(c("gray","purple","black","gold","orange","red","magenta","green","green4","cyan","cornflowerblue"),
+                                                 as.character(c(11,10,1:9))))
+
+# sample data
+set.seed(234)
+ind <- sample(dim(noZ)[2], 1000)
+samp <- noZ[,ind]
+colors_to_use <- clustercol[ind]
+
+# pvcluster and make dendrograms
+test <- pvclust(samp,method.hclust="centroid",method.dist="cor")
+plotd <- as.dendrogram(test)
+colors_to_use <- colors_to_use[order.dendrogram(plotd)]
+dendnew <- assign_values_to_leaves_edgePar(dend=plotd, value = colors_to_use, edgePar = "col") %>% set("labels_cex", 0)  
+
+png(file=pvclust_ReprodUnd1500bpRandSamp234.png")
+    plot(dendnew,main="pvclust with leaves clustered by color") 
+dev.off()
+
+
