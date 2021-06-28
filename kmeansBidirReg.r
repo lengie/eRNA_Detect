@@ -96,8 +96,10 @@ run.pvclust.iterations <- function(matrix,colorvector,iterations){
         seed <- runif(1, min = 100, max = 999)
         set.seed(seed)
         print(seed) #maybe make a not-verbose option
-        samp <- matrix[,ind]
-        colors_to_use <- colorvector[ind]
+
+        ind <- sample(dim(noZ)[2], 1000)
+        samp <- noZ[,ind]
+        colors_to_use <- clustercol[ind]
         clust <- pvclust(samp,method.hclust="centroid",method.dist="cor")
         plotd <- as.dendrogram(test)
         colors_to_use <- colors_to_use[order.dendrogram(plotd)]
