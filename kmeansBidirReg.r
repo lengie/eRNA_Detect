@@ -111,3 +111,20 @@ run.pvclust.iterations <- function(matrix,colorvector,iterations){
     }
 }
 
+
+run.kmeans.iterations <- function(matrix,iterations){
+    for(i in 1:iterations){
+        seed <- runif(1, min = 100, max = 999)
+        set.seed(seed)
+        print(seed) 
+        ind <- sample(dim(matrix)[2], 1000)
+        samp <- noZ[,ind]
+        clustercat <- clustercol[,ind]
+
+        kClust <- kmeans(t(samp), centers=9, nstart = 100, iter.max = 10)
+        pngfile <- paste("kmeans_ReprodUnd1500bpIter10N10k_",i,".png",sep="")
+        png(pngfile,)
+            fviz_cluster(kClusters, data=samp, geom="point", repel=TRUE, shape=clustercat) + ggtitle("k = 2") + scale_shape_manual('sox10 cluster designation', values=c(22,23,24))
+        dev.off()
+    }
+}
