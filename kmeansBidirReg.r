@@ -91,6 +91,26 @@ clustercol <- stringr::str_replace_all(clusterno,
                                         setNames(c("gray","purple","black","gold","orange","red","magenta","green","green4","cyan","cornflowerblue"),
                                                  as.character(c(11,10,1:9))))
 
+
+#k means
+#set new factors for sox10 cluster1-5 and 6-10 as fviz_cluster() cannot plot more than 6 geom_point types simultaneously
+lab_col <- colnames(noZ)
+lab_col <- gsub('cluster([0-9]+)_.*','\\1',lab_col) 
+lab_col <- stringr::str_replace_all(lab_col,setNames(c(rep("3",5),rep("2",5)),as.character(c(10:1))))
+lab_col <- replace(lab_col,grepl("Bidir",lab_col),1)
+lab_col <- as.numeric(lab_col)
+
+data <- as.data.frame(t(noZ[2:29,]))
+scaledata <- scale(data)
+data$clusterno <- as.factor(lab_col)
+scaledata$clusterno <- as.factor(lab_col)
+sampS <- data[sample(dim(data)[1], 20000),]
+ktest <- kmeans(sampS[,2:29]),centers=9,nstart=10,iter.max=10)
+fviz_cluster(ktest, data=sampS[,2:29], geom = "point") + 
+    ggtitle("Rand Sampling 20000, k = 9") + geom_point(aes(shape=sampS[,1]))
+
+
+#functions
 run.pvclust.iterations <- function(matrix,colorvector,iterations){
     for(i in 1:iterations){
         seed <- runif(1, min = 100, max = 999)
