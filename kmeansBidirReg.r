@@ -105,7 +105,7 @@ scaledata <- scale(data)
 data$clusterno <- as.factor(lab_col)
 scaledata$clusterno <- as.factor(lab_col)
 sampS <- data[sample(dim(data)[1], 20000),]
-ktest <- kmeans(sampS[,2:29]),centers=9,nstart=10,iter.max=10)
+ktest <- kmeans(sampS[,2:29],centers=9,nstart=10,iter.max=10)
 fviz_cluster(ktest, data=sampS[,2:29], geom = "point") + 
     ggtitle("Rand Sampling 20000, k = 9") + geom_point(aes(shape=sampS[,1]))
 
