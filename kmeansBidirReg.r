@@ -115,6 +115,11 @@ ans.kmeans.par <- foreach(i=1:15) %dopar% {
 
 fviz_cluster(ans.kmeans.par, data=scaledata[,1:60], geom = "point", repel=TRUE) + ggtitle("sox10 Reprod Bidir Reg Scaled, k = 9") + geom_point(aes(shape=lab_col))
 
+#tSNE
+unique <- unique(scaledata)
+tsnescaled <- Rtsne(scaledata[,1:60], dims = 2, perplexity=30, verbose=TRUE, max_iter = 100,num_threads=0)
+
+
 #functions
 run.pvclust.iterations <- function(matrix,colorvector,iterations){
     for(i in 1:iterations){
