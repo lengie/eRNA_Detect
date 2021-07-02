@@ -23,6 +23,7 @@ library(stringr)
 library(factoextra)
 library(foreach)
 library(doMC)
+library(Rtsne)
 options(scipen=999)
 
 ##regions under 1.5kb
