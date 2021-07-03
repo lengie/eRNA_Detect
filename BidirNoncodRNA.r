@@ -17,11 +17,13 @@ library(dplyr)
 library(data.table)
 options(scipen=999)
 
+# load bam files to process
 bam1file <- "ct711a_150804_hets_nuc1PrimaryReads.bam"
 bamfile2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam" 
 gtffile <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz11.96.gtf" 
 
-bidirncRNAwGTF{
+bidirncRNAwGTF <- function(bamfile,gtffile,flank=500){
+	#load coding regions to remove (coding exons and UTRs)
 	txdb <- makeTxDbFromGFF(gtffile,
                                format="gtf",
                                circ_seqs = character()
@@ -31,17 +33,18 @@ bidirncRNAwGTF{
 	utr5 <- fiveUTRsByTranscript(txdb)
 	utr3 <- threeUTRsByTranscript(txdb)
  
+	#adding a flank (default 500bp) to the UTRs
 	utr5df <- as.data.frame(utr5)
 	utr5minus <- dplyr::filter(utr5df,strand=="-")
 	utr5plus <- dplyr::filter(utr5df,strand=="+")
 	utr5minus <- data.frame(seqnames=utr5minus$seqnames,
 				start=utr5minus$start,
-				end=utr5minus$end+500,
+				end=utr5minus$end+flank,
 				strand=utr5minus$strand,
 				exon_id=utr5minus$exon_id,
 				exon_name=utr5minus$exon_name)
 	utr5plus <- data.frame(seqnames=utr5plus$seqnames,
-			       start=utr5plus$start-500,
+			       start=utr5plus$start-flank,
 			       end=utr5plus$end,
 			       strand=utr5plus$strand,
 			       exon_id=utr5plus$exon_id,
@@ -62,59 +65,51 @@ bidirncRNAwGTF{
 			       strand=utr5minus$strand,
 			       exon_id=utr5minus$exon_id,
 			       exon_name=utr5minus$exon_name)
-
+	
+	#combing together all regions you want to remove from the bamfile
 	coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
-
+	
+	#read in bam file
 	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
     	bamread <- readGAlignmentPairs(bamfile, param=ScanBamParam(flag=flag))
      	gbam <- GRanges(bamread)
 	
+	# find overlaps, remove them
    	overlaps <- findOverlaps(gbam1,coding,ignore.strand=FALSE) #could put the GRanges() in here to save storage space
-	hits1 <- gbam1[-queryHits(overlaps),]
-	underten1 <- hits1[width(hits1)<10000]
-	ten1 <- hits1[width(hits1)>10000]
-	write.table(ten1,file="/panfs/qcb-panasas/engie/GRCz11Star/ct711a_Hets1PrimaryNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+	hits <- gbam[-queryHits(overlaps),]
+	# save the non-coding regions
+	underten1 <- hits[width(hits)<10000]
+	ten <- hits[width(hits)>10000]
+	#write.table(ten1,file="/panfs/qcb-panasas/engie/GRCz11Star/ct711a_Hets1PrimaryNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
     	
 	#needs to be a 6 column bed
-	underten1df <- data.frame(chr = as.character(seqnames(underten1)),
-                    		  start = start(underten1)-1,
-                    	 	  end = end(underten1),
-				  name = "n/a",
+	undertendf <- data.frame(chr = as.character(seqnames(underten)),
+                    		  start = start(underten)-1,
+                    	 	  end = end(underten),
+				  ID = 1:nrow(underten),
 				  score = 0,
-				  strand = strand(underten1)
+				  strand = strand(underten)
 				  )
-	write.table(underten1df,file="/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+	#save the file
+	#write.table(underten1df,file="/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+	return(undertendf)
+	}
 
-## Sort and merge outside of R
+## Sort and merge the individual strands outside of R, for each replicate
 bedtools sort -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed
-bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0 -s > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMerged.bed
-	
-## Back in R
-	outsidemerged1 <- fread("GRCz11Star/ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMerged.bed",data.table=TRUE,fill=TRUE)
-	plus <- dplyr::filter(outsidemerged1,V4=="+")
-	minus <- dplyr::filter(outsidemerged1,V4=="-")
+bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0 -S - > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMergedMinus.bed
+bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0 -S + > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMergedPlus.bed
 
-	plus6 <- data.frame(plus$V1,plus$V2,plus$V3,ID="n/a",score=0,strand=plus$V4)
-	minus6 <- data.frame(minus$V1,minus$V2,minus$V3,ID="n/a",score=0,strand=minus$V4)
-	write.table(plus6,file="GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedPlus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
-	write.table(minus6,file="GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedMinus.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+bedtools sort -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed
+bedtools merge -i ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed -d 0 -S - > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kMergedMinus.bed
+bedtools merge -i ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed -d 0 -S + > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kMergedPlus.bed
 
-## Intersect outside of R
-intersectBed -sorted -S -a ct711a_150804_hets_nuc1PrimaryUnder10kMergedMinus.bed -b ct711a_150804_hets_nuc1PrimaryUnder10kMergedPlus.bed > ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersected.bed
-
-#will need to switch/reconcile
-bedtools intersect -a sox10_Zv9nuc1FlankedNoncodingUnder10kMergedPlus6.bed -b sox10_Zv9nuc1FlankedNoncodingUnder10kMergedMinus6.bed -nonamecheck > sox10_Zv9nuc1FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
-bedtools intersect -a sox10_Zv9nuc2FlankedNoncodingUnder10kMergedPlus6.bed -b sox10_Zv9nuc2FlankedNoncodingUnder10kMergedMinus6.bed -nonamecheck > sox10_Zv9nuc2FlankedNoncodingUnder10kMergedSeparatelyIntersected.bed
-	
-	
- ## Back in R   
-	intersected1 <- fread("GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
-	colnames(intersected1) <- c("chr","start","end","ID","score","strand")
-	
-	#merge the intersections for the wider
-	nuc1merge <- mergeByOverlaps(minus,plus,ignore.strand=TRUE)
-	nuc2merge <- mergeByOverlaps(minus2,plus2,ignore.strand=TRUE)
-	nuc1merged <- data.frame(chr=c(seqnames(nuc1merge$plus),seqnames(nuc1merge$minus)),
+###
+## Back in R to reformat and extract only regions with bidirectionality
+#merge the intersections for the wider
+nuc1merge <- mergeByOverlaps(minus,plus,ignore.strand=TRUE)
+nuc2merge <- mergeByOverlaps(minus2,plus2,ignore.strand=TRUE)
+nuc1merged <- data.frame(chr=c(seqnames(nuc1merge$plus),seqnames(nuc1merge$minus)),
                         start=c(start(nuc1merge$plus),start(nuc1merge$minus)),
                         end=c(end(nuc1merge$plus),end(nuc1merge$minus)),
                         ID="n/a",
@@ -128,8 +123,9 @@ nuc2merged <- data.frame(chr=c(seqnames(nuc2merge$plus2),seqnames(nuc2merge$minu
                         strand=c(strand(nuc2merge$plus2),strand(nuc2merge$minus2)))
 write.table(nuc1merged,file="sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 write.table(nuc2merged,file="sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+	
  
-# outside of R
+# outside of R merge (get a union) of the bidirectional regions
 bedtools sort -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
 bedtools merge -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed
 
