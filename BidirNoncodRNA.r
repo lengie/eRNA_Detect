@@ -107,23 +107,35 @@ bedtools merge -i ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed -d 0
 ###
 ## Back in R to reformat and extract only regions with bidirectionality
 #merge the intersections for the wider
-nuc1merge <- mergeByOverlaps(minus,plus,ignore.strand=TRUE)
-nuc2merge <- mergeByOverlaps(minus2,plus2,ignore.strand=TRUE)
-nuc1merged <- data.frame(chr=c(seqnames(nuc1merge$plus),seqnames(nuc1merge$minus)),
-                        start=c(start(nuc1merge$plus),start(nuc1merge$minus)),
-                        end=c(end(nuc1merge$plus),end(nuc1merge$minus)),
-                        ID="n/a",
+plus_file <- "sox10_Zv9nuc1FlankedNoncodingUnder10kPlusOnlyMerged.bed"
+minus_file <- "sox10_Zv9nuc1FlankedNoncodingUnder10kMinusOnlyMerged.bed"
+plus2_file <- "sox10_Zv9nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed"
+minus2_file <- "sox10_Zv9nuc2FlankedNoncodingUnder10kMinusOnlyMerged.bed"
+
+read_format <- function(file){
+	strand <- fread(plusfile,data.table=TRUE,fill=TRUE)
+	colnames(strand) <- c("seqnames","start","end","strand")
+	return(GRanges(strand))
+}
+plus <- read_format(plus_file)
+minus <- read_format(minus_file)
+plus2 <- read_format(plus2_file)
+minus2 <- read_format(minus2_file)
+
+overlap_format <- function(plus_strand,minus_strand){
+	merge <- mergeByOverlaps(minus_strand,plus_strand,ignore.strand=TRUE)
+	merged <- data.frame(chr=c(seqnames(merge$plus_strand),seqnames(merge$minus_strand)),
+                        start=c(start(merge$plus_strand),start(merge$minus_strand)),
+                        end=c(end(merge$plus_strand),end(merge$minus_strand)),
+                        ID=1:nrow(merge),
                         score=0,
-                        strand=c(strand(nuc1merge$plus),strand(nuc1merge$minus)))
-nuc2merged <- data.frame(chr=c(seqnames(nuc2merge$plus2),seqnames(nuc2merge$minus2)),
-                        start=c(start(nuc2merge$plus2),start(nuc2merge$minus2)),
-                        end=c(end(nuc2merge$plus2),end(nuc2merge$minus2)),
-                        ID="n/a",
-                        score=0,
-                        strand=c(strand(nuc2merge$plus2),strand(nuc2merge$minus2)))
+                        strand=c(strand(merge$plus_strand),strand(merge$minus_strand)))
+	return(merged)
+}
+nuc1merged <- overlapformat(plus,minus)
+nuc2merged <- overlapformat(plus2,minus2)
 write.table(nuc1merged,file="sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 write.table(nuc2merged,file="sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-	
  
 # outside of R merge (get a union) of the bidirectional regions
 bedtools sort -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
