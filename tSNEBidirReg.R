@@ -79,17 +79,17 @@ forplotting <- d_tsne_100[postind,]
 postsamp <- data.matrix(d_tsne_100[postind, c(1,2)])
 
 fit_cluster <- clara(scale(postsamp),k=6,metric="euclidean") #vs manhattan or jaccard distance? Maybe jaccard
-fit_cluster_jaccard <- clara(scale(postsamp),k=6,metric="jaccard")
-fit_cluster_hierarchical=fastcluster::hclust(dist(scale(postsamp)),method="centroid")
+#fit_cluster_jaccard <- clara(scale(postsamp),k=6,metric="jaccard")
+fit_cluster_hierarchical <- fastcluster::hclust(dist(scale(postsamp)),method="centroid")
   
-forplotting$cl_kmeans = factor(fit_cluster_kmeans$cluster)
-forplotting$cl_kmeansjaccard = factor(fit_cluster_jaccard$cluster)
+forplotting$cl_kmeans = factor(fit_cluster$cluster)
+#forplotting$cl_kmeansjaccard = factor(fit_cluster_jaccard$cluster)
 forplotting$cl_hierarchical = factor(cutree(fit_cluster_hierarchical, k=6))
 
 #plotting by new kmeans clusters, ignoring old groupings 
 plot_cluster=function(data, var_cluster, palette)
 {
-  ggplot(data, aes_string(x="V1", y="V2", color=var_cluster)) +
+  ggplot(data, aes_string(x="V2", y="V3", color=var_cluster)) +
   geom_point(size=0.25) +
   guides(colour=guide_legend(override.aes=list(size=6))) +
   xlab("") + ylab("") +
@@ -103,11 +103,35 @@ plot_cluster=function(data, var_cluster, palette)
     scale_colour_brewer(palette = palette) 
 }
 
-plot_k=plot_cluster(d_tsne_100_original, "cl_kmeans", "Accent")
-plot_h=plot_cluster(d_tsne_100_original, "cl_hierarchical", "Set1")
-plot_k=plot_cluster(postsamp, "cl_kmeans", "Accent")
-plot_h=plot_cluster(postsamp, "cl_hierarchical", "Set1")
+plot_k=plot_cluster(forplotting, "cl_kmeans", "Accent")
+plot_h=plot_cluster(forplotting, "cl_hierarchical", "RdYlGn")
 ## and finally: putting the plots side by side with gridExtra lib...
-library(gridExtra)
-grid.arrange(plot_k, plot_h,  ncol=2)
- 
+png("tsne_under1500bp100bin_seed222rand600k_100perp_kmeans_seed111rand150kpoints.png",width=1080,height=1080)
+    grid.arrange(plot_k, plot_h,  ncol=2)
+dev.off()
+
+#all the points into a k-means
+d_tsne_100 <- fread("sox10_Zv9BidirReprod100Rem500bpNearestSpannedUnder1500bp100bp_tsne600krand222_100perp.csv",header=FALSE)
+d_tsne_100 <- d_tsne_100[,c(2,3)]
+all <- data.matrix(d_tsne_100)
+fit_cluster <- clara(scale(all),k=6,metric="euclidean")
+d_tsne_100$orig_clusters <- factor(as.numeric(unique[ind,61]))
+d_tsne_100$euc_kmeansclusters <- factor(fit_cluster$cluster)
+
+plot_o <- ggplot(d_tsne_100, aes_string(x="V2", y="V3", color="orig_clusters")) +
+  geom_point(size=0.25) +
+  guides(colour=guide_legend(override.aes=list(size=6))) +
+  xlab("") + ylab("") +
+  ggtitle("") +
+  theme_light(base_size=20) +
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        legend.direction = "horizontal", 
+        legend.position = "bottom",
+        legend.box = "horizontal") +
+  scale_color_manual(name="Orig. clusters",values=c("black","purple","gray","gold","orange","red","magenta","green","green4","cyan","cornflowerblue"))
+plot_k <- plot_cluster(d_tsne_100,"euc_kmeansclusters","RdYlGn") 
+
+png("tsne_under1500bp100bin_seed222rand600k_100perp_kmeansclara_allpoints.png",width=1920,height=1080)
+    grid.arrange(plot_o, plot_k,  ncol=2)
+dev.off()
