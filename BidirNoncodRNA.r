@@ -90,7 +90,7 @@ ncOverlaps <- function(gbam,coding,filename){
 	undertendf <- data.frame(chr = as.character(seqnames(underten)),
                     		  start = start(underten)-1,
                     	 	  end = end(underten),
-				  ID = 1:nrow(underten),
+				  ID = 1:length(underten),
 				  score = 0,
 				  strand = strand(underten)
 				  )
