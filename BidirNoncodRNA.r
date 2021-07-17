@@ -4,12 +4,13 @@
 ###
 ###
 ### Written by Liana Engie
-### Last updated: May 2021
+### Last updated: July 2021
 ###
 ### bidirncRNA(bamfile,gtffile)
 ### Input: string chromosome number, int input_start, int input_end, string strand (either "+" or "-")
 ### (Current) Output: bed6 file containing non-coding regions where RNA is read from both strands, consistently between two biological replicates
 
+library(Rsamtools)
 library(GenomicFeatures)
 library(GenomicAlignments) 
 library(ggplot2)
@@ -22,7 +23,7 @@ bam1file <- "ct711a_150804_hets_nuc1PrimaryReads.bam"
 bamfile2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam" 
 gtffile <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz11.96.gtf" 
 
-bidirncRNAwGTF <- function(bamfile,gtffile,flank=500){
+codingGRange <- function(bamfile,gtffile,flank=500){
 	#load coding regions to remove (coding exons and UTRs)
 	txdb <- makeTxDbFromGFF(gtffile,
                                format="gtf",
@@ -68,19 +69,22 @@ bidirncRNAwGTF <- function(bamfile,gtffile,flank=500){
 	
 	#combing together all regions you want to remove from the bamfile
 	coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
-	
-	#read in bam file
-	flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
-    	bamread <- readGAlignmentPairs(bamfile, param=ScanBamParam(flag=flag))
-     	gbam <- GRanges(bamread)
-	
+	return(coding)
+}
+
+#read in bam file
+flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
+bamread <- readGAlignmentPairs(bamfile, param=ScanBamParam(flag=flag))
+gbam <- GRanges(bamread)
+
+ncOverlaps <- function(gbam,coding,filename){
 	# find overlaps, remove them
-   	overlaps <- findOverlaps(gbam1,coding,ignore.strand=FALSE) #could put the GRanges() in here to save storage space
+   	overlaps <- findOverlaps(gbam,coding,ignore.strand=FALSE)
 	hits <- gbam[-queryHits(overlaps),]
 	# save the non-coding regions
-	underten1 <- hits[width(hits)<10000]
+	underten <- hits[width(hits)<10000]
 	ten <- hits[width(hits)>10000]
-	#write.table(ten1,file="/panfs/qcb-panasas/engie/GRCz11Star/ct711a_Hets1PrimaryNoncodingOver10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+	write.table(ten,file=paste(filename,"Over10k.bed",sep=""),quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
     	
 	#needs to be a 6 column bed
 	undertendf <- data.frame(chr = as.character(seqnames(underten)),
@@ -91,7 +95,7 @@ bidirncRNAwGTF <- function(bamfile,gtffile,flank=500){
 				  strand = strand(underten)
 				  )
 	#save the file
-	#write.table(underten1df,file="/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
+	write.table(undertendf,file=paste(filename,"Under10k.bed",sep=""),quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 	return(undertendf)
 	}
 
