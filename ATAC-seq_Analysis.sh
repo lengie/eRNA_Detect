@@ -1,4 +1,4 @@
-### ATAC-seq_Analysis
+### ATAC-seq_Analysis.sh
 ###
 ###
 ### Code written for analysis of ATAC-seq FASTQ files from Trinh et al 2017
@@ -64,3 +64,19 @@ samtools view -h -q 30 sox10ATAC883.rmChrM.rmDup.bam > sox10ATAC883.rmChrM.rmDup
 # Remove reads unmapped, mate unmapped, not primary alignment, reads failing platform, duplicates (-F 1804), retain properly paired reads -f 2
 samtools view -h -b -F 1804 -f 2 sox10ATAC882.rmChrM.rmDup.rmMulti.bam > sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.bam
 samtools view -h -b -F 1804 -f 2 sox10ATAC883.rmChrM.rmDup.rmMulti.bam > sox10ATAC883.rmChrM.rmDup.rmMulti.filtered.bam
+
+# shift reads to account for Tn5 insertion/duplication
+# Not critical for the work we are doing here as we do not need super precise boundaries
+alignmentSieve --numberOfProcessors 20 --ATACshift --bam sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.bam -o sox10ATAC882.shiftedtmp.bam
+
+# the bam file needs to be sorted again
+samtools sort -@ 20 -O bam -o sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam sox10ATAC882.shiftedtmp.bam
+samtools index -@ 20 sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam
+rm sox10ATAC882.shiftedtmp.bam
+
+# effective genome size was calculated with khmer
+
+# -f BAMPE, use paired-end information
+# --keep-dup all, keep all duplicate reads.
+macs2 callpeak --nomodel --extsize 100 -g 1267788788 --kep-dup all --cutoff-analysis -n sox10ATAC882 \
+  -t sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam 
