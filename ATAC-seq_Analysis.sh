@@ -78,5 +78,10 @@ rm sox10ATAC882.shiftedtmp.bam
 
 # -f BAMPE, use paired-end information
 # --keep-dup all, keep all duplicate reads.
-macs2 callpeak --nomodel --extsize 100 -g 1267788788 --kep-dup all --cutoff-analysis -n sox10ATAC882 \
+macs2 callpeak --nomodel --extsize 100 -g 1267788788 --keep-dup all --cutoff-analysis -n sox10ATAC882 \
   -t sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam 
+  
+samtools sort -n sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam -o sox10ATAC882.rmall.sorted.bam -@ 20
+samtools sort -n sox10ATAC883.rmChrM.rmDup.rmMulti.filtered.shifted.bam -o sox10ATAC883.rmall.sorted.bam -@ 20
+
+Genrich -t sox10ATAC883.rmall.sorted.bam,sox10ATAC882.rmall.sorted.bam -j -d 100 -v -o sox10ATAC_genrich #this should be sox10ATAC_genrich.narrowPeaks
