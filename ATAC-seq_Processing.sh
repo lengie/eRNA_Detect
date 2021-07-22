@@ -1,4 +1,4 @@
-### ATAC-seq_Analysis.sh
+### ATAC-seq_Processing.sh
 ###
 ###
 ### Code written for analysis of ATAC-seq FASTQ files from Trinh et al 2017
@@ -81,6 +81,7 @@ rm sox10ATAC882.shiftedtmp.bam
 macs2 callpeak --nomodel --extsize 100 -g 1267788788 --keep-dup all --cutoff-analysis -n sox10ATAC882 \
   -t sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam 
   
+# using genrich as an alternative to MACS  
 samtools sort -n sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam -o sox10ATAC882.rmall.sorted.bam -@ 20
 samtools sort -n sox10ATAC883.rmChrM.rmDup.rmMulti.filtered.shifted.bam -o sox10ATAC883.rmall.sorted.bam -@ 20
 
