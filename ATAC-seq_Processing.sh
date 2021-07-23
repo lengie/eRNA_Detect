@@ -85,4 +85,43 @@ macs2 callpeak --nomodel --extsize 100 -g 1267788788 --keep-dup all --cutoff-ana
 samtools sort -n sox10ATAC882.rmChrM.rmDup.rmMulti.filtered.shifted.bam -o sox10ATAC882.rmall.sorted.bam -@ 20
 samtools sort -n sox10ATAC883.rmChrM.rmDup.rmMulti.filtered.shifted.bam -o sox10ATAC883.rmall.sorted.bam -@ 20
 
-Genrich -t sox10ATAC883.rmall.sorted.bam,sox10ATAC882.rmall.sorted.bam -j -d 100 -v -o sox10ATAC_genrich #this should be sox10ATAC_genrich.narrowPeaks
+Genrich -t sox10ATAC883.rmall.sorted.bam,sox10ATAC882.rmall.sorted.bam -j -d 100 -v -o sox10ATAC_genrich.narrowPeaks
+
+## some basic comparisons between the ATAC peaks files in R
+#library(remotes) 
+#remotes::install_github("jokergoo/cotools")
+library(cotools) 
+library(data.table)
+library(GenomicRanges)
+
+# load the data
+genrich <- fread("sox10ATAC_genrich.narrowPeaks") 
+dualMACs <- fread("sox10ATAC_MACS2_narrowPeaks.bed")
+colnames(dualMACs) <- c("chr","start","end","name","score","strand","fold_enrichment","pval","qval","blockCount")
+colnames(genrich) <- c("chr","start","end","name","score","strand","signalValue","pval","qval","peak")
+ggen <- GRanges(genrich)
+gmacs <- GRanges(dualMACs)
+
+# jaccard distance between the two genomic ranges
+genomicCorr.jaccard(ggen,gmacs)
+
+# get some summary statistics
+sumstatdf <- function(index){
+    width <- index$end - index$start
+    print(min(width))
+    print(median(width))
+    print(mean(width))
+    print(max(width))
+    print(nrow(index))}
+sumstatcol <- function(index){
+    print(min(index))
+    print(median(index))
+    print(mean(index))
+    print(max(index))}
+    
+sumstatdf(genrich)
+sumstatdf(dualMACs)
+sumstatcol(genrich$pval)
+sumstatcol(dualMACs$pval)
+
+# k-means on the ATAC-seq regions, features being plus and minus strand read counts
