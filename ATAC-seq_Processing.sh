@@ -93,6 +93,13 @@ Genrich -t sox10ATAC883.rmall.sorted.bam,sox10ATAC882.rmall.sorted.bam -j -d 100
 library(cotools) 
 library(data.table)
 library(GenomicRanges)
+library(gridExtra)
+library(dplyr) 
+library(parallel)
+library(factoextra)
+library(cluster)
+library(GenomicAlignments)
+options(scipen=999)
 
 # load the data
 genrich <- fread("sox10ATAC_genrich.narrowPeaks") 
@@ -124,4 +131,83 @@ sumstatdf(dualMACs)
 sumstatcol(genrich$pval)
 sumstatcol(dualMACs$pval)
 
+compare <- findOverlaps(ggen,gmacs,ignore.strand=TRUE) 
+length(compare)
+length(unique(queryHits(compare)))
+length(unique(subjectHits(compare)))
+
 # k-means on the ATAC-seq regions, features being plus and minus strand read counts
+
+nuc2 <- fread("sox10nuc873_primary.bed")
+colnames(nuc2) <- c("chr","start","end","ID","score","strand")
+sox10_nuc2 <- GRanges(nuc2)
+#seqlevelsStyle(sox10_nuc2) <- "UCSC"
+
+
+gen_reads <- data.frame(plus=strand_counts(ggen,sox10_nuc2,"+"),
+                        minus=strand_counts(ggen,sox10_nuc2,"-"))
+
+macs_reads <- data.frame(plus=strand_counts(gmacs,sox10_nuc2,"+"),
+                         minus=strand_counts(gmacs,sox10_nuc2,"-"))
+
+## How many clusters?
+# assuming that the columns are features and rows are samples; variance is being calculated over 
+var_mean_plot <- function(input,filename){  
+    under_var <- apply(input, 1, var)
+    under_mean <- apply(input, 1, mean)
+    
+    png(paste(filename,".png",sep=""))
+        plot(log2(under_mean), log2(under_var), pch='.')
+        abline(h=log2(50), col='red')
+        abline(v=log2(20), col='red')
+        text(x=9,y=24, labels="variance > 50 &\n mean > 20", col='red')
+    dev.off()
+    return(list(under_var,under_mean))
+}
+
+gen_vm <- var_mean_plot(gen_reads,"sox10ATAC_genRichVarMeanStrandedReadPlot")
+macs_vm <- var_mean_plot(macs_reads,"sox10ATAC_MACS2VarMeanStrandedReadPlot")
+
+sub20g <- gen_reads[which(gen_vm[[1]] > 50 & gen_vm[[2]] > 20),]
+sub20m <- macs_reads[which(macs_vm[[1]]> 50 & macs_vm[[2]] > 20),]
+
+for (i in 2:15) wss20[i] <- sum(kmeans(sub20g,centers=i)$withinss)
+
+png("sox10ATAC_WithinGSS_genrich.png")
+plot(1:15, wss20, type="b", xlab="Number of Clusters",
+  ylab="Within groups sum of squares",main="GenRich ATAC Var>50 MeanReads>20")
+dev.off()
+
+wss20m <- (nrow(sub20m)-1)*sum(apply(sub20m,2,var))
+
+for (i in 2:15) wss20m[i] <- sum(kmeans(sub20m,centers=i)$withinss)
+
+png("sox10ATAC_WithinGSS_MACS2.png")
+plot(1:15, wss20m, type="b", xlab="Number of Clusters",
+  ylab="Within groups sum of squares",main="MACS2 ATAC Var>50 MeanReads>20")
+dev.off()
+
+## clustering
+fit_cluster_g <- clara(gen_reads,k=3,metric="euclidean")
+fit_cluster_m <- clara(macs_reads,k=3,metric="euclidean")
+fit_cluster_m6 <- clara(macs_reads,k=6,metric="euclidean")
+
+# read out the clusters
+gen_reads$cluster <- fit_cluster_g$clustering
+macs_reads$cluster <- fit_cluster_m$clustering
+macs_reads$cluster6 <- fit_cluster_m6$clustering
+ 
+# plotting
+g <- ggplot(gen_reads,aes(x=reads,y=reads.1,color=cluster))+geom_point() +
+      ggtitle("GenRich ATAC peaks, k-means k=3") + ylab("plus strand read counts") + xlab("minus strand read counts") + 
+      scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
+m <- ggplot(macs_reads,aes(x=reads,y=reads.1,color=cluster)) + geom_point() +
+      ggtitle("MACS2 ATAC peaks, k-means k=3") + ylab("plus strand read counts") + 
+      xlab("minus strand read counts")+ scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
+m6 <- ggplot(macs_reads,aes(x=reads,y=reads.1,color=cluster6)) + geom_point()+ggtitle("MACS2 ATAC peaks, k-means k=6") + ylab("plus strand read counts") + xlab("minus strand read counts")+ scale_y_continuous(trans='log10') + scale_x_continuous(trans='log10')
+
+png("sox10ATAC_kmeans.png",width=860,height=540)
+    grid.arrange(g,m,m6,ncol=3)
+dev.off()
+
+
