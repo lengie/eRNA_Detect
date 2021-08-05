@@ -4,7 +4,7 @@
 ###
 ###
 ### Written by Liana Engie
-### Last updated: July 2021
+### Last updated: August 2021
 ###
 ### bidirncRNA(bamfile,gtffile)
 ### Input: string chromosome number, int input_start, int input_end, string strand (either "+" or "-")
@@ -22,6 +22,13 @@ options(scipen=999)
 bam1file <- "ct711a_150804_hets_nuc1PrimaryReads.bam"
 bamfile2 <- "/auto/cmb-00/rr/engie/RNA/hets2.bam" 
 gtffile <- "/auto/cmb-00/rr/engie/RNA/Danio_rerio.GRCz11.96.gtf" 
+
+
+loadbg <- function(bg,strand){
+    bg <- mutate(bg,strand)
+    colnames(bg) <- c("chr","start","end","score","strand")
+    return(bg)
+}
 
 codingGRange <- function(bamfile,gtffile,flank=500){
 	#load coding regions to remove (coding exons and UTRs)
