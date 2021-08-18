@@ -10,8 +10,15 @@ library(keras)
 library(tensorflow)
 library(dplyr)
 options(scipen=999)
-use_condaenv("newenv")
+use_condaenv("/project/rohs_102/keras")
 
+## data that has been combined together already
+data <- fread("sox10_DLtestingBPM.csv")
+y_all <- data$V121
+x_all <- data[,1:120]
+y_cat <- to_categorical(y_all,2)
+
+## OR load raw datasets
 # the way Galaxy had uploaded the bigwig files, minus is used first in createMatrix
 bins <- c(paste(seq(-30,-1,by=1),"minus",sep=""),
             paste(seq(1,30,by=1),"minus",sep=""),
@@ -30,7 +37,11 @@ BPMnot_ov <- as.matrix(BPMnotov_file[,1:120])
 colnames(BPMoverlaps) <- bins
 colnames(BPMnot_ov) <- bins
 
-
+# bactin data sets: both replicates
+data <- fread("bactnuc869and70_bothBW3kb50bins.tabular")
+# convert the NAs to 0 before converting to a matrix, so it is definitely a numeric matrix
+data <- data %>% replace(is.na(.), 0)
+x_bact <- as.matrix(data[,1:120])
 ## Pull out 1/8th of data for validation
 set.seed(120)
 
@@ -63,6 +74,8 @@ set_training_valid <- function(cond1,cond2,n,n2){
 datasets <- set_training_valid(overlaps,not_ov,5860,62900)
 datasets <- set_training_valid(BPMoverlaps,BPMnot_ov,5860,62900)
 
+
+## the actual DL model
 model <- keras_model_sequential()
 model %>%
     layer_dense(units= 512, activation="relu", input_shape=c(120)) %>%
@@ -73,7 +86,7 @@ model %>%
 summary(model)
 model %>% compile(
     loss = 'categorical_crossentropy',
-    optimizer = optimizer_rmsprop(), #not sure about this one
+    optimizer = optimizer_rmsprop(),
     metrics = c('accuracy')
 )
 
