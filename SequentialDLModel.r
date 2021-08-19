@@ -51,6 +51,7 @@ putenh <- rbind(BPMoverlaps,bact_ov)
 noise <- rbind(BPMnot_ov,bact_no)
 
 
+# splitting the datasets for training & testing
 set_training_valid <- function(cond1,cond2,n,n2){  
        overlap_ind <- sample(dim(cond1)[1], n) 
        noov_ind <- sample(dim(cond2)[1], n2)
@@ -78,13 +79,31 @@ set_training_valid <- function(cond1,cond2,n,n2){
        return(list(x_training,y_training, x_valid,y_valid))
 }
 
-## setting up combinations to test
-ep <- c(5,10,20) 
-seeds <- c(111,123,222,333,233)
-
 putenhno <- floor(nrow(BPMoverlaps)/8)
 noiseno <- floor(nrow(BPMnot_ov)/8)
 datasets <- set_training_valid(BPMoverlaps,BPMnot_ov,putenhno,noiseno)
+
+
+## testing (predicting) data
+# data from other replicates for testing. Minus is still before plus
+soxnuc1Ov_file <- <- fread("sox10_BidirOverlapATAC3kb50bpbinsNuc1BPM.tabular")
+soxnuc1NoOv_file <- fread("sox10_BidirNotOverlapATAC3kb50bpbinsNuc1BPM.tabular")
+nuc1Overlaps <- as.matrix(BPMovfile[,1:120])
+nuc1Not_ov <- as.matrix(BPMnotov_file[,1:120])
+colnames(BPMoverlaps) <- bins
+colnames(BPMnot_ov) <- bins
+x_bact_test <- data[,121:240]
+colnames(x_bact_test) <- bins
+
+x_test <- rbind(BPMoverlaps,BPMnot_ov,x_bact_test)
+y_test_cat <- c(rep(0,times=nrow(BPMoverlaps)),rep(1,times=nrow(BPMnot_ov)),data$V242) 
+y_test <- to_categorical(y_test_cat,2)
+
+
+
+## setting up combinations of epoch numbers and data splits to examine the model
+ep <- c(5,10,20) 
+seeds <- c(111,123,222,333,233)
 
 
 for(i in 1:length(ep)){
@@ -114,14 +133,14 @@ for(i in 1:length(ep)){
         )
 
         history <- model %>% fit(
-            as.matrix(datasets[[1]]), datasets[[2]],
+            datasets[[1]], datasets[[2]],
             epochs=ep[i], batch_size = 10000,
-            validation_data=list(as.matrix(datasets[[3]]),datasets[[4]]),
+            validation_data=list(datasets[[3]],datasets[[4]]),
             verbose = 1)
 
         # Get confusion matrix for predictions
-        classes <- model %>% predict_classes(test, batch_size=128)
-        ct <- table(test.target, classes)
+        classes <- model %>% predict_classes(test, batch_size=10000)
+        ct <- table(as.matrix(x_test),y_test)
         cm <- as.matrix(ct)
         
     }
