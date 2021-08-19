@@ -36,76 +36,93 @@ colnames(BPMoverlaps) <- bins
 colnames(BPMnot_ov) <- bins
 
 # bactin data sets: both replicates
-data <- fread("bactnuc869and70_bothBW3kb50bins.tabular")
-# convert the NAs to 0 before converting to a matrix, so it is definitely a numeric matrix
-data <- data %>% replace(is.na(.), 0)
-x_bact <- as.matrix(data[,1:120])
-colnames(x_bact) <- bins
+data <- fread("bact_DLtestingBPM.csv")
+x_bact <- data[,c(1:120,241)]
+bact_ov <- dplyr::filter(x_bact,V242==1)
+bact_no <- dplyr::filter(x_bact,V242==0)
 
-## Pull out 1/8th of data for validation
-set.seed(111)
+bact_ov <- bact_ov[,1:120]
+colnames(bact_ov) <- bins
+bact_no <- bact_no[,1:120]
+colnames(bact_no) <- bins
 
-# n and n2 are the number of each condition to put in the VALIDATION training data set
+# two category data sets
+putenh <- rbind(BPMoverlaps,bact_ov)
+noise <- rbind(BPMnot_ov,bact_no)
+
+
 set_training_valid <- function(cond1,cond2,n,n2){  
-    overlap_ind <- sample(dim(cond1)[1], n) 
-    noov_ind <- sample(dim(cond2)[1], n2)
+       overlap_ind <- sample(dim(cond1)[1], n) 
+       noov_ind <- sample(dim(cond2)[1], n2)
     
-    x_training <- rbind( cond1[-overlap_ind,],
-                        cond2[-noov_ind,] )
-    x_valid <- rbind(cond1[overlap_ind,],
-                     cond2[noov_ind,] )
-    
-    # categories should be a binary class matrix
-    cond1left <- dim(cond1)[1]-n
-    cond2left <- dim(cond2)[1]-n2
-
-    y_training <- matrix(c(rep(1,times=cond1left),rep(0,times=cond2left),rep(0,times=cond1left),rep(1,times=cond2left)),
-                         nrow=(cond1left+cond2left), ncol=2,
-                         byrow=FALSE,
-                         dimnames= list(c(1:(cond1left+cond2left)),c("putenh","noise")) )
-    y_valid <- matrix(c(rep(1,times=n),rep(0,times=n2),rep(0,times=n),rep(1,times=n2)),
-                    nrow=(n+n2), ncol=2,
-                    byrow=FALSE,
-                    dimnames= list(c(1:(n+n2)),c("putenh","noise")) )
-
-    return(list(x_training,y_training, x_valid,y_valid))
-}
-## simplified version with no numbers
-set_training <- function(cond1,cond2){     
-    x_training <- rbind(cond1,cond2)
-
-    # categories should be a binary class matrix
-    len <- nrow(cond1)
-    len2 <- nrow(cond2)
-    y_training <- matrix(c(rep(c(1,0),times=len),rep(c(0,1),times=len2)),
-                         nrow=(len+len2), ncol=2,
-                         byrow=TRUE,
-                         dimnames= list(c(1:(len+len2)),c("putenh","noise")) )
-    return(list(x_training,y_training))
+       # rbind the putenh large fraction and noise large fraction
+       x_training <- rbind(as.matrix(cond1[-overlap_ind,]),
+                           as.matrix(cond2[-noov_ind,] ))
+       # rbind the smaller fractions, overlap then not-overlap below
+       x_valid <- rbind(as.matrix(cond1[overlap_ind,]),
+                        as.matrix(cond2[noov_ind,] ))
+ 
+       # categories should be a binary class matrix. c("noise","putenh") c(0,1)
+       cond1left <- dim(cond1)[1]-n
+       cond2left <- dim(cond2)[1]-n2
+        
+       # putative enhancers are first and get number 1
+       y_training <- matrix(c(rep(c(1,0),times=cond1left),rep(c(0,1),times=cond2left)),
+                            nrow=(cond1left+cond2left), ncol=2,
+                            byrow=TRUE,
+                            dimnames= list(c(1:(cond1left+cond2left)),c("putenh","noise")) )
+       y_valid <- matrix(c(rep(c(1,0),times=n),rep(c(0,1),times=n2)),
+                        nrow=(n+n2), ncol=2,
+                        byrow=TRUE,
+                        dimnames= list(c(1:(n+n2)),c("putenh","noise")) )
+       return(list(x_training,y_training, x_valid,y_valid))
 }
 
+## setting up combinations to test
+ep <- c(5,10,20) 
+seeds <- c(111,123,222,333,233)
 
-datasets <- set_training_valid(BPMoverlaps,BPMnot_ov,5860,62900)
+putenhno <- floor(nrow(BPMoverlaps)/8)
+noiseno <- floor(nrow(BPMnot_ov)/8)
+datasets <- set_training_valid(BPMoverlaps,BPMnot_ov,putenhno,noiseno)
 
 
-## the actual DL model
-model <- keras_model_sequential()
-model %>%
-    layer_dense(units= 512, activation="relu", input_shape=c(120)) %>%
-    layer_dense(units= 512, activation="relu") %>%
-    layer_dropout(rate=0.1) %>%
-    layer_dense(units=2, activation="softmax")
+for(i in 1:length(ep)){
+    for(j in 1:length(seeds)){
+        ## Pull out 1/8th of data for validation
+        set.seed(seeds[i])
+        print(paste("seed is ",seeds[j]," and number of epochs will be ",ep[i],sep=""))
 
-summary(model)
-model %>% compile(
-    loss = 'categorical_crossentropy',
-    optimizer = optimizer_rmsprop(),
-    metrics = c('accuracy')
-)
+        # n and n2 are the number of each condition to put in the VALIDATION training data set
+    
+        #ATAC-overlap goes first, so putative enhancers = 0, noise = 1
+        datasets <- set_training_valid(putenh,noise,putenhno,noiseno)
+    
+        model <- keras_model_sequential()
+        model %>%
+            layer_dense(units= 512, activation="relu", input_shape=c(120)) %>%
+            layer_dense(units= 512, activation="relu") %>%
+            layer_dropout(rate=0.1) %>%
+            layer_dense(units=2, activation="softmax")
 
-history <- model %>% fit(
-    datasets[[1]], datasets[[2]],
-    epochs=20, batch_size = 10000,
-    validation_split = 0.2,
-    verbose = 1
-)
+        print(summary(model))
+
+        model %>% compile(
+            loss = 'categorical_crossentropy',
+            optimizer = 'adam',
+            metrics = c('accuracy')
+        )
+
+        history <- model %>% fit(
+            as.matrix(datasets[[1]]), datasets[[2]],
+            epochs=ep[i], batch_size = 10000,
+            validation_data=list(as.matrix(datasets[[3]]),datasets[[4]]),
+            verbose = 1)
+
+        # Get confusion matrix for predictions
+        classes <- model %>% predict_classes(test, batch_size=128)
+        ct <- table(test.target, classes)
+        cm <- as.matrix(ct)
+        
+    }
+}
