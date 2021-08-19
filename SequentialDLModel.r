@@ -139,9 +139,15 @@ for(i in 1:length(ep)){
             verbose = 1)
 
         # Get confusion matrix for predictions
-        classes <- model %>% predict_classes(test, batch_size=10000)
-        ct <- table(as.matrix(x_test),y_test)
-        cm <- as.matrix(ct)
+        classes <- model %>% predict_classes(x_test, batch_size=100)
+        ct <- table(round(classes),y_test)
+        cm <- as.matrix(cttest)
+        print(cm)
+        print(multi_class_rates(cm)
+
+        # evaluate the model
+        evals <- model %>% evaluate(x_test, t_test, batch_size = 100)
+        accuracy = evals[2][[1]]* 100
         
     }
 }
