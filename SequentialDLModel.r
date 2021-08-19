@@ -24,8 +24,6 @@ bins <- c(paste(seq(-30,-1,by=1),"minus",sep=""),
             paste(seq(1,30,by=1),"minus",sep=""),
             paste(seq(-30,-1,by=1),"plus",sep=""),
             paste(seq(1,30,by=1),"plus",sep=""))
-colnames(overlaps) <- bins
-colnames(not_ov) <- bins
 # each sample is a row and each feature/bin is a column so it looks like an image file that's been reformatted into a single line
 
 
@@ -42,8 +40,10 @@ data <- fread("bactnuc869and70_bothBW3kb50bins.tabular")
 # convert the NAs to 0 before converting to a matrix, so it is definitely a numeric matrix
 data <- data %>% replace(is.na(.), 0)
 x_bact <- as.matrix(data[,1:120])
+colnames(x_bact) <- bins
+
 ## Pull out 1/8th of data for validation
-set.seed(120)
+set.seed(111)
 
 # n and n2 are the number of each condition to put in the VALIDATION training data set
 set_training_valid <- function(cond1,cond2,n,n2){  
@@ -70,8 +70,21 @@ set_training_valid <- function(cond1,cond2,n,n2){
 
     return(list(x_training,y_training, x_valid,y_valid))
 }
+## simplified version with no numbers
+set_training <- function(cond1,cond2){     
+    x_training <- rbind(cond1,cond2)
 
-datasets <- set_training_valid(overlaps,not_ov,5860,62900)
+    # categories should be a binary class matrix
+    len <- nrow(cond1)
+    len2 <- nrow(cond2)
+    y_training <- matrix(c(rep(c(1,0),times=len),rep(c(0,1),times=len2)),
+                         nrow=(len+len2), ncol=2,
+                         byrow=TRUE,
+                         dimnames= list(c(1:(len+len2)),c("putenh","noise")) )
+    return(list(x_training,y_training))
+}
+
+
 datasets <- set_training_valid(BPMoverlaps,BPMnot_ov,5860,62900)
 
 
