@@ -5,20 +5,16 @@
 ### Input: transcription across 50bp bins spanning 3kb on both strands of genomic regions
 ### Output: predictions
 
+## loading required packages
 library(data.table)
 library(keras)
 library(tensorflow)
 library(dplyr)
 options(scipen=999)
+# use a conda environment with tensorflow and keras loaded
 use_condaenv("/project/rohs_102/keras")
 
-## data that has been combined together already
-data <- fread("sox10_DLtestingBPM.csv")
-y_all <- data$V121
-x_all <- data[,1:120]
-y_cat <- to_categorical(y_all,2)
-
-## OR load raw datasets
+## column names to keep track of everything
 # the way Galaxy had uploaded the bigwig files, minus is used first in createMatrix
 bins <- c(paste(seq(-30,-1,by=1),"minus",sep=""),
             paste(seq(1,30,by=1),"minus",sep=""),
@@ -26,7 +22,15 @@ bins <- c(paste(seq(-30,-1,by=1),"minus",sep=""),
             paste(seq(1,30,by=1),"plus",sep=""))
 # each sample is a row and each feature/bin is a column so it looks like an image file that's been reformatted into a single line
 
+## data that has been combined together already. Transcription per bin in columns and last column is category
+# category is 0,1 where 0 is noise and 1 is a putative enhancer
+data <- fread("sox10_DLtestingBPM.csv")
+y_all <- data$V121
+x_all <- data[,1:120]
+colnames(x_all) <- bins
+y_cat <- to_categorical(y_all,2)
 
+## OR load raw datasets
 ## BPM-scaled datasets
 BPMovfile <- fread("sox10_BidirOverlapATAC3kb50bpbinsBPM.tabular")
 BPMnotov_file <- fread("sox10_BidirNotOverlapATAC3kb50bpbinsBPM.tabular")
@@ -35,12 +39,13 @@ BPMnot_ov <- as.matrix(BPMnotov_file[,1:120])
 colnames(BPMoverlaps) <- bins
 colnames(BPMnot_ov) <- bins
 
-# bactin data sets: both replicates
+# bactin data sets: both replicates. Transcription per bin in columns and last column is category
 data <- fread("bact_DLtestingBPM.csv")
 x_bact <- data[,c(1:120,241)]
-bact_ov <- dplyr::filter(x_bact,V242==1)
-bact_no <- dplyr::filter(x_bact,V242==0)
+bact_ov <- dplyr::filter(x_bact,V241==1)
+bact_no <- dplyr::filter(x_bact,V241==0)
 
+# removing the column with categories
 bact_ov <- bact_ov[,1:120]
 colnames(bact_ov) <- bins
 bact_no <- bact_no[,1:120]
@@ -88,15 +93,15 @@ datasets <- set_training_valid(BPMoverlaps,BPMnot_ov,putenhno,noiseno)
 # data from other replicates for testing. Minus is still before plus
 soxnuc1Ov_file <- <- fread("sox10_BidirOverlapATAC3kb50bpbinsNuc1BPM.tabular")
 soxnuc1NoOv_file <- fread("sox10_BidirNotOverlapATAC3kb50bpbinsNuc1BPM.tabular")
-nuc1Overlaps <- as.matrix(BPMovfile[,1:120])
-nuc1Not_ov <- as.matrix(BPMnotov_file[,1:120])
-colnames(BPMoverlaps) <- bins
-colnames(BPMnot_ov) <- bins
+nuc1Overlaps <- as.matrix(soxnuc1Ov_file[,1:120])
+nuc1Not_ov <- as.matrix(soxnuc1NoOv_file[,1:120])
+colnames(nuc1Overlaps) <- bins
+colnames(nuc1Not_ov) <- bins
 x_bact_test <- data[,121:240]
 colnames(x_bact_test) <- bins
 
-x_test <- rbind(BPMoverlaps,BPMnot_ov,x_bact_test)
-y_test_cat <- c(rep(0,times=nrow(BPMoverlaps)),rep(1,times=nrow(BPMnot_ov)),data$V242) 
+x_test <- rbind(nuc1Overlaps,nuc1Not_ov,x_bact_test)
+y_test_cat <- c(rep(0,times=nrow(BPMoverlaps)),rep(1,times=nrow(BPMnot_ov)),data$V241) 
 y_test <- to_categorical(y_test_cat,2)
 
 
