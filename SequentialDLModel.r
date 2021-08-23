@@ -14,6 +14,17 @@ options(scipen=999)
 # use a conda environment with tensorflow and keras loaded
 use_condaenv("/project/rohs_102/keras")
 
+# for evaluation later
+multi_class_rates <- function(confusion_matrix) {
+    true_positives  <- diag(confusion_matrix)
+    false_positives <- colSums(confusion_matrix) - true_positives
+    false_negatives <- rowSums(confusion_matrix) - true_positives
+    true_negatives  <- sum(confusion_matrix) - true_positives -
+        false_positives - false_negatives
+    return(data.frame(true_positives, false_positives, true_negatives,
+                      false_negatives, row.names = names(true_positives)))
+}
+
 ## column names to keep track of everything
 # the way Galaxy had uploaded the bigwig files, minus is used first in createMatrix
 bins <- c(paste(seq(-30,-1,by=1),"minus",sep=""),
@@ -73,25 +84,25 @@ set_training_valid <- function(cond1,cond2,n,n2){
        cond2left <- dim(cond2)[1]-n2
         
        # putative enhancers are first and get number 1
-       y_training <- matrix(c(rep(c(1,0),times=cond1left),rep(c(0,1),times=cond2left)),
-                            nrow=(cond1left+cond2left), ncol=2,
+       y_training <- matrix(c(rep(1,times=cond1left),rep(0,times=cond2left)),
+                            nrow=(cond1left+cond2left), ncol=1,
                             byrow=TRUE,
-                            dimnames= list(c(1:(cond1left+cond2left)),c("putenh","noise")) )
-       y_valid <- matrix(c(rep(c(1,0),times=n),rep(c(0,1),times=n2)),
-                        nrow=(n+n2), ncol=2,
+                            dimnames= list(c(1:(cond1left+cond2left)),"putenh") )
+       y_valid <- matrix(c(rep(1,times=n),rep(0,times=n2)),
+                        nrow=(n+n2), ncol=1,
                         byrow=TRUE,
-                        dimnames= list(c(1:(n+n2)),c("putenh","noise")) )
+                        dimnames= list(c(1:(n+n2)),"putenh") )
        return(list(x_training,y_training, x_valid,y_valid))
 }
 
-putenhno <- floor(nrow(BPMoverlaps)/8)
-noiseno <- floor(nrow(BPMnot_ov)/8)
-datasets <- set_training_valid(BPMoverlaps,BPMnot_ov,putenhno,noiseno)
+putenhno <- floor(nrow(putenh)/8)
+noiseno <- floor(nrow(noise)/8)
+datasets <- set_training_valid(putenh,noise,putenhno,noiseno)
 
 
 ## testing (predicting) data
 # data from other replicates for testing. Minus is still before plus
-soxnuc1Ov_file <- <- fread("sox10_BidirOverlapATAC3kb50bpbinsNuc1BPM.tabular")
+soxnuc1Ov_file <- fread("sox10_BidirOverlapATAC3kb50bpbinsNuc1BPM.tabular")
 soxnuc1NoOv_file <- fread("sox10_BidirNotOverlapATAC3kb50bpbinsNuc1BPM.tabular")
 nuc1Overlaps <- as.matrix(soxnuc1Ov_file[,1:120])
 nuc1Not_ov <- as.matrix(soxnuc1NoOv_file[,1:120])
@@ -100,9 +111,9 @@ colnames(nuc1Not_ov) <- bins
 x_bact_test <- data[,121:240]
 colnames(x_bact_test) <- bins
 
-x_test <- rbind(nuc1Overlaps,nuc1Not_ov,x_bact_test)
-y_test_cat <- c(rep(0,times=nrow(BPMoverlaps)),rep(1,times=nrow(BPMnot_ov)),data$V241) 
-y_test <- to_categorical(y_test_cat,2)
+x_test <- as.matrix(rbind(nuc1Overlaps,nuc1Not_ov,x_bact_test))
+y_test_cat <- as.matrix( c(rep(1,times=nrow(nuc1Overlaps)),rep(0,times=nrow(nuc1Not_ov)),data$V241) )
+#y_test <- to_categorical(y_test_cat,2)
 
 
 
@@ -127,32 +138,36 @@ for(i in 1:length(ep)){
             layer_dense(units= 512, activation="relu", input_shape=c(120)) %>%
             layer_dense(units= 512, activation="relu") %>%
             layer_dropout(rate=0.1) %>%
-            layer_dense(units=2, activation="softmax")
+            layer_dense(units=1, activation="softmax")
 
         print(summary(model))
 
         model %>% compile(
-            loss = 'categorical_crossentropy',
+            loss = 'binary_crossentropy',
             optimizer = 'adam',
-            metrics = c('accuracy')
+            metrics = c('binary_accuracy','accuracy')
         )
 
         history <- model %>% fit(
-            datasets[[1]], datasets[[2]],
-            epochs=ep[i], batch_size = 10000,
-            validation_data=list(datasets[[3]],datasets[[4]]),
+            as.matrix(datasets[[1]]), datasets[[2]],
+            epochs=ep[i], batch_size = 100,
+            validation_data=list(as.matrix(datasets[[3]]),datasets[[4]]),
             verbose = 1)
-
+                
+        # save the model weights
+        modname <- paste("sox10bactinTrained_4layers",seeds[j],"epoch",ep[i],".h5",sep="")
+        save_model_hdf5(model,modname)
+                
+        # evaluate the model
+        evals <- model %>% evaluate(x_test, y_test_cat, batch_size = 100)
+        accuracy = evals[2][[1]]* 100
+        print(accuracy)
+                        
         # Get confusion matrix for predictions
         classes <- model %>% predict_classes(x_test, batch_size=100)
-        ct <- table(round(classes),y_test)
-        cm <- as.matrix(cttest)
+        ct <- table(round(classes),y_test_cat)
+        cm <- as.matrix(ct)
         print(cm)
-        print(multi_class_rates(cm)
-
-        # evaluate the model
-        evals <- model %>% evaluate(x_test, t_test, batch_size = 100)
-        accuracy = evals[2][[1]]* 100
-        
+        print(multi_class_rates(cm))
     }
 }
