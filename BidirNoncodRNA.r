@@ -85,6 +85,8 @@ bamread <- readGAlignmentPairs(bamfile, param=ScanBamParam(flag=flag))
 gbam <- GRanges(bamread)
 
 ncOverlaps <- function(gbam,coding,filename){
+	seqlevelsStyle(gbam) <- "UCSC"
+	seqlevelsStyle(coding) <- "UCSC"
 	# find overlaps, remove them
    	overlaps <- findOverlaps(gbam,coding,ignore.strand=FALSE)
 	hits <- gbam[-queryHits(overlaps),]
@@ -115,7 +117,7 @@ sortMerge <- function(filename,dist=0){
 
 #merge the intersections for the wider
 read_format <- function(file){
-	strand <- fread(plusfile,data.table=TRUE,fill=TRUE)
+	strand <- fread(file,data.table=TRUE,fill=TRUE)
 	colnames(strand) <- c("seqnames","start","end","strand")
 	return(GRanges(strand))
 }
@@ -141,18 +143,19 @@ overlap_format <- function(plus_strand,minus_strand,file,dist=0){
 
 overlap_format(plus,minus,"sox10_871_HiSatUnder10k")
 
+
 replicateReprod <- function(rep1,rep2,file,dist=0){
-    repmergedf <- data.frame(chr=c(seqnames(repmerge$grep1bidir),seqnames(repmerge$grep2bidir)),
-                        start=c(start(repmerge$grep1bidir),start(repmerge$grep2bidir)),
-                        end=c(end(repmerge$grep1bidir),end(repmerge$grep2bidir)),
-                        ID=1:(nrow(repmerge)*2),
-                        score=0,
-                        strand='*')
+    repmergedf <- data.frame(chr=c(seqnames(rep1),seqnames(rep2)),
+                        start=c(start(rep1),start(rep2)),
+                        end=c(end(rep1),end(rep2)),
+                        ID=1:(nrow(rep1)+nrow(rep2)),
+                        score=1:(nrow(rep1)+nrow(rep2)),
+                        strand='+') #just a stand in
     filename <- paste(file,"AllBidirReg.bed"sep="")
     write.table(repmergedf,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
     
-    system(sprintf("bedtools sort -i %s > %sAllBidirRegSorted.bed",filename,file))
-    system(paste("bedtools merge -i ",file,"AllBidirRegSorted.bed -d ",dist," > ",file,"ReprodOnly.bed",sep=""))
+    system(sprintf("bedtools sort -i %s > %s_AllBidirRegSorted.bed",filename,file))
+    system(paste("bedtools merge -i ",file,"_AllBidirRegSorted.bed -d ",dist," > ",file,"ReprodOnly.bed",sep=""))
 }
 
 readCounts <- function(){
