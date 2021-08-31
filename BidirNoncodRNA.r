@@ -151,7 +151,7 @@ replicateReprod <- function(rep1,rep2,file,dist=0){
                         ID=1:(nrow(rep1)+nrow(rep2)),
                         score=1:(nrow(rep1)+nrow(rep2)),
                         strand='+') #just a stand in
-    filename <- paste(file,"AllBidirReg.bed"sep="")
+    filename <- paste(file,"AllBidirReg.bed",sep="")
     write.table(repmergedf,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
     
     system(sprintf("bedtools sort -i %s > %s_AllBidirRegSorted.bed",filename,file))
