@@ -39,23 +39,6 @@ remcoding <- function(gr){
 }
 
 #make sure that adding flanking regions doesn't go beyond chromosome length
-#(note: need to make this faster than nested for loops)
-chrLimitCheck <- function(df,gen){
-    temp <- c()
-    limit <- getChromInfoFromUCSC(gen)
-    for(i in 1:nrow(df)){
-        for(j in 1:nrow(limit)){
-            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
-                df$end[i]=limit$size[j]  
-               if(df$start[i]>limit$size[j]) temp=c(temp,i)
-            }
-        if(is.null(temp)==FALSE) df <- df[-temp,]
-        }
-    }
-    return(df)
-} 
-
-#having some null issues on the above
 chrLimitCheck <- function(df,gen){
     temp <- c()
     limit <- getChromInfoFromUCSC(gen)
@@ -69,6 +52,19 @@ chrLimitCheck <- function(df,gen){
     return(df)
 } 
 
+# or use this when connected to a node and cannot access internet
+chrLimitCheckNoInt <- function(df,limit){
+    for(i in 1:nrow(df)){
+        for(j in 1:nrow(limit)){
+            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
+                df$end[i]=limit$size[j]  
+            }
+        }
+    }
+    return(df)
+} 
+limit <- fread("danRer7.chrom.sizes")
+colnames(limit) <- c("chrom","size")
 
 ##
 # loading reproducible bidirectional regions and cluster list
