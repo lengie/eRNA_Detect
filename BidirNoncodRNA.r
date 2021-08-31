@@ -124,13 +124,13 @@ minus_file <- "YOUR_DATASET_MergedMinus.bed"
 plus <- read_format(plus_file)
 minus <- read_format(minus_file)
 
-overlap_format <- function(plus_strand,minus_strand,file){
+overlap_format <- function(plus_strand,minus_strand,file,dist=0){
 	merge <- mergeByOverlaps(minus_strand,plus_strand,ignore.strand=TRUE)
 	merged <- data.frame(chr=c(seqnames(merge$plus_strand),seqnames(merge$minus_strand)),
                         start=c(start(merge$plus_strand),start(merge$minus_strand)),
                         end=c(end(merge$plus_strand),end(merge$minus_strand)),
                         ID=1:nrow(merge),
-                        score=0,
+                        score=1:nrow(merge),
                         strand=c(strand(merge$plus_strand),strand(merge$minus_strand)))
         filename <- paste(file,"OverlapsToMerge.bed",sep="")
 	write.table(merged,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
@@ -139,7 +139,23 @@ overlap_format <- function(plus_strand,minus_strand,file){
     system(paste("bedtools merge -i ",file,"OverlapsMergedSorted.bed -d ",dist," > ",file,"OverlapsMerged.bed",sep=""))
 }
 
-replicateReprod <- function(){
+overlap_format(plus,minus,"sox10_871_HiSatUnder10k")
+
+replicateReprod <- function(rep1,rep2,file,dist=0){
+    repmergedf <- data.frame(chr=c(seqnames(repmerge$grep1bidir),seqnames(repmerge$grep2bidir)),
+                        start=c(start(repmerge$grep1bidir),start(repmerge$grep2bidir)),
+                        end=c(end(repmerge$grep1bidir),end(repmerge$grep2bidir)),
+                        ID=1:(nrow(repmerge)*2),
+                        score=0,
+                        strand='*')
+    filename <- paste(file,"AllBidirReg.bed"sep="")
+    write.table(repmergedf,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+    
+    system(sprintf("bedtools sort -i %s > %sAllBidirRegSorted.bed",filename,file))
+    system(paste("bedtools merge -i ",file,"AllBidirRegSorted.bed -d ",dist," > ",file,"ReprodOnly.bed",sep=""))
+}
+
+readCounts <- function(){
 	nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
 	nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
 	colnames(nuc1bidir) <- c("chr","start","end")
