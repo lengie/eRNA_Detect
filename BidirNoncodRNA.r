@@ -107,33 +107,24 @@ ncOverlaps <- function(gbam,coding,filename){
 	}
 
 ## Sort and merge the individual strands outside of R, for each replicate
-bedtools sort -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed
-bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0 -S - > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMergedMinus.bed
-bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0 -S + > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMergedPlus.bed
+sortMerge <- function(filename,dist=0){
+    system(sprintf("bedtools sort -i %s.bed > %sSorted.bed",filename,filename))
+    system(paste("bedtools merge -i ",filename,"Sorted.bed -d ",dist," -S - > ",filename,"MergedMinus.bed",sep=""))
+    system(paste("bedtools merge -i ",filename,"Sorted.bed -d ",dist," -S + > ",filename,"MergedPlus.bed",sep=""))
+}
 
-bedtools sort -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed
-bedtools merge -i ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed -d 0 -S - > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kMergedMinus.bed
-bedtools merge -i ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed -d 0 -S + > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kMergedPlus.bed
-
-###
-## Back in R to reformat and extract only regions with bidirectionality
 #merge the intersections for the wider
-plus_file <- "sox10_Zv9nuc1FlankedNoncodingUnder10kPlusOnlyMerged.bed"
-minus_file <- "sox10_Zv9nuc1FlankedNoncodingUnder10kMinusOnlyMerged.bed"
-plus2_file <- "sox10_Zv9nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed"
-minus2_file <- "sox10_Zv9nuc2FlankedNoncodingUnder10kMinusOnlyMerged.bed"
-
 read_format <- function(file){
 	strand <- fread(plusfile,data.table=TRUE,fill=TRUE)
 	colnames(strand) <- c("seqnames","start","end","strand")
 	return(GRanges(strand))
 }
+plus_file <- "SET_THESE_MergedPlus.bed"
+minus_file <- "YOUR_DATASET_MergedMinus.bed"
 plus <- read_format(plus_file)
 minus <- read_format(minus_file)
-plus2 <- read_format(plus2_file)
-minus2 <- read_format(minus2_file)
 
-overlap_format <- function(plus_strand,minus_strand){
+overlap_format <- function(plus_strand,minus_strand,file){
 	merge <- mergeByOverlaps(minus_strand,plus_strand,ignore.strand=TRUE)
 	merged <- data.frame(chr=c(seqnames(merge$plus_strand),seqnames(merge$minus_strand)),
                         start=c(start(merge$plus_strand),start(merge$minus_strand)),
@@ -141,20 +132,14 @@ overlap_format <- function(plus_strand,minus_strand){
                         ID=1:nrow(merge),
                         score=0,
                         strand=c(strand(merge$plus_strand),strand(merge$minus_strand)))
-	return(merged)
+        filename <- paste(file,"OverlapsToMerge.bed",sep="")
+	write.table(merged,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+    system(sprintf("bedtools sort -i %s > %sOverlapsMergedSorted.bed",filename,file))
+    system(paste("bedtools merge -i ",file,"OverlapsMergedSorted.bed -d ",dist," > ",file,"OverlapsMerged.bed",sep=""))
 }
-nuc1merged <- overlapformat(plus,minus)
-nuc2merged <- overlapformat(plus2,minus2)
-write.table(nuc1merged,file="sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-write.table(nuc2merged,file="sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
- 
-# outside of R merge (get a union) of the bidirectional regions
-bedtools sort -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
-bedtools merge -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed
 
-bedtools sort -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
-bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed
-
+replicateReprod <- function(){
 	nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
 	nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
 	colnames(nuc1bidir) <- c("chr","start","end")
@@ -186,6 +171,7 @@ bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
 	intersected1 <- dplyr::mutate(intersected1, size = end-start)
 	write.table(intersected1,file="ct711aHets1PrimaryReadsBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
 }
+
 intersected1 <- fread("ct711a_Homoz1PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
 colnames(intersected1) <- c("chr","start","end","ID","score","strand")
 intersected2 <- fread("ct711a_Homoz2PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
