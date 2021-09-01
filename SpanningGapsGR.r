@@ -80,7 +80,8 @@ codes <- fread("Zv9ExonsUTRs500bpFlanking.bed")
 colnames(codes) <- c("chr","start","end","size","strand","ID","score") 
 coding <- GRanges(codes)
 
-spanGap <- function(repl,threshold,gap){
+# this code adds a flanking buffer region to each read and combines the regions that now overlap. so all regions that do not merge with another now have a buffer
+flankSpanGap <- function(repl,threshold,gap){
     # remove reads under threshold size
     rm <- dplyr::filter(repl,size>threshold)
     
@@ -105,6 +106,26 @@ spanGap <- function(repl,threshold,gap){
     return(comb)
 }
 
+#this code does the same, but does not use the internet and starts with the GRanges object
+flankSpanGapGR <- function(repl,gap){ 
+    nearest <- distanceToNearest(repl)
+    list <- which(mcols(nearest)$distance<gap)
+    #remove NA
+    rmNoNA <- repl[queryHits(nearest),]
+    
+    # add flanks to those close to each other
+    adj <- rmNoNA[list,]
+    adj$start <- adj$start - gap  #could have these be separate numbers if folks want to have sep parameters
+    adj$end <- adj$end + gap
+    #make sure we don't have negative indices
+    adj <- nonzero(adj)
+    adj <- chrLimitCheckNoInt(adj,limit)
+    
+    #combine flanked regions into original and make sure there's no coding regions added back in
+    comb <- GenomicRanges::union(GRanges(adj),grepl)
+    comb <- remcoding(comb)
+    return(comb)
+}
 
 ## should make separate function for cluster overlap comparison       
 # overlap comparison with all clusters and get unique "ground truth" regions that are covered
