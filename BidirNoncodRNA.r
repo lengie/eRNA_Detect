@@ -143,13 +143,13 @@ overlap_format <- function(plus_strand,minus_strand,file,dist=0){
 
 overlap_format(plus,minus,"sox10_871_HiSatUnder10k")
 
-
+# input is two GRanges objects and we are merging the overlapping regions in a strand specific manner
 replicateReprod <- function(rep1,rep2,file,dist=0){
     repmergedf <- data.frame(chr=c(seqnames(rep1),seqnames(rep2)),
                         start=c(start(rep1),start(rep2)),
                         end=c(end(rep1),end(rep2)),
-                        ID=1:(nrow(rep1)+nrow(rep2)),
-                        score=1:(nrow(rep1)+nrow(rep2)),
+                        ID=1:(length(rep1)+length(rep2)),
+                        score=1:(length(rep1)+length(rep2)),
                         strand='+') #just a stand in
     filename <- paste(file,"AllBidirReg.bed",sep="")
     write.table(repmergedf,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
