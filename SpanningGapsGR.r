@@ -66,6 +66,18 @@ chrLimitCheckNoInt <- function(df,limit){
 limit <- fread("danRer7.chrom.sizes")
 colnames(limit) <- c("chrom","size")
 
+
+chrLimitCheckNoIntGR <- function(df,limit){
+    for(i in 1:length(df)){
+        for(j in 1:nrow(limit)){
+            if(as.character(seqnames(df)[i])==as.character(limit$chrom[j]) & as.numeric(end(df)[i])>limit$size[j]){
+                end(df)[i]=limit$size[j]  
+            }
+        }
+    }
+    return(df)
+} 
+
 ##
 # loading reproducible bidirectional regions and cluster list
 repl <- fread("sox10_Zv9FlankedWiderNoncodingReprodOnly.bed")
@@ -115,14 +127,14 @@ flankSpanGapGR <- function(repl,gap){
     
     # add flanks to those close to each other
     adj <- rmNoNA[list,]
-    adj$start <- adj$start - gap  #could have these be separate numbers if folks want to have sep parameters
-    adj$end <- adj$end + gap
+    start(adj) <- start(adj) - gap  #could have these be separate numbers if folks want to have sep parameters
+    end(adj) <- end(adj) + gap
     #make sure we don't have negative indices
-    adj <- nonzero(adj)
-    adj <- chrLimitCheckNoInt(adj,limit)
+    adj <- nonzeroGR(adj)
+    adj <- chrLimitCheckNoIntGR(adj,limit)
     
     #combine flanked regions into original and make sure there's no coding regions added back in
-    comb <- GenomicRanges::union(GRanges(adj),grepl)
+    comb <- GenomicRanges::union(adj,grepl)
     comb <- remcoding(comb)
     return(comb)
 }
