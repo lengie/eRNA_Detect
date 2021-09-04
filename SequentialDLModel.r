@@ -26,48 +26,56 @@ multi_class_rates <- function(confusion_matrix) {
 }
 
 ## column names to keep track of everything
-# the way Galaxy had uploaded the bigwig files, minus is used first in createMatrix
-bins <- c(paste(seq(-30,-1,by=1),"minus",sep=""),
-            paste(seq(1,30,by=1),"minus",sep=""),
-            paste(seq(-30,-1,by=1),"plus",sep=""),
-            paste(seq(1,30,by=1),"plus",sep=""))
+# plus strand came first, then minus in createMatrix
+bins <- c(paste(seq(-30,-1,by=1),"plus",sep=""),
+            paste(seq(1,30,by=1),"plus",sep=""),
+            paste(seq(-30,-1,by=1),"minus",sep=""),
+            paste(seq(1,30,by=1),"minus",sep=""))
 # each sample is a row and each feature/bin is a column so it looks like an image file that's been reformatted into a single line
 
-## data that has been combined together already. Transcription per bin in columns and last column is category
-# category is 0,1 where 0 is noise and 1 is a putative enhancer
-data <- fread("sox10_DLtestingBPM.csv")
-y_all <- data$V121
-x_all <- data[,1:120]
-colnames(x_all) <- bins
-y_cat <- to_categorical(y_all,2)
+			
+Hovfile <- fread("sox10_871873_HisatATACOverlaps3kb50bp.tabular")
+Hnotov_file <- fread("sox10_871873_HisatATACNoOverlaps3kb50bp.tabular")
+# overlaps file has first replicate then second
+Hov <- as.matrix(Hovfile[,121:240])
+Hnot_ov <- as.matrix(Hnotov_file[,121:240])
+colnames(Hov) <- bins
+colnames(Hnot_ov) <- bins
 
-## OR load raw datasets
-## BPM-scaled datasets
-BPMovfile <- fread("sox10_BidirOverlapATAC3kb50bpbinsBPM.tabular")
-BPMnotov_file <- fread("sox10_BidirNotOverlapATAC3kb50bpbinsBPM.tabular")
-BPMoverlaps <- as.matrix(BPMovfile[,1:120])
-BPMnot_ov <- as.matrix(BPMnotov_file[,1:120])
-colnames(BPMoverlaps) <- bins
-colnames(BPMnot_ov) <- bins
+bnot_file <- fread("bactin_869-70_HisatATACNoOverlaps3kb50bp.tabular")
+# convert the NAs to 0 before converting to a matrix, so it is definitely a numeric matrix
+bnot_file <- bnot_file %>% replace(is.na(.), 0)
+bnot_ov <- as.matrix(bnot_file[,1:120])
+colnames(bnot_ov) <- bins
+bovfile <- fread("bactin_869-70_HisatATACOverlaps3kb50bp.tabular")
+bovfile <- bovfile %>% replace(is.na(.),0)
+bov <- as.matrix(bovfile[,1:120])
 
-# bactin data sets: both replicates. Transcription per bin in columns and last column is category
-data <- fread("bact_DLtestingBPM.csv")
-x_bact <- data[,c(1:120,241)]
-bact_ov <- dplyr::filter(x_bact,V241==1)
-bact_no <- dplyr::filter(x_bact,V241==0)
+# because I have already separated ATAC overlapping from non-overlapping, no need to get a matrix of 1s and 0s
 
-# removing the column with categories
-bact_ov <- bact_ov[,1:120]
-colnames(bact_ov) <- bins
-bact_no <- bact_no[,1:120]
-colnames(bact_no) <- bins
+#second replicate for testing
+nuc1Overlaps <- as.matrix(Hovfile[,1:120]) #the first rep
+nuc1Not_ov <- as.matrix(Hnotov_file[,1:120])
+colnames(nuc1Overlaps) <- bins
+colnames(nuc1Not_ov) <- bins
+bov_train <- as.matrix(bovfile[,121:240])
+bno_train <- as.matrix(bnot_file[,121:240])
+colnames(bov_train) <- bins
+colnames(bno_train) <- bins
+x_test <- rbind(nuc1Overlaps,nuc1Not_ov,bov_train,bno_train)
+y_test <- as.matrix( c(rep(1,times=nrow(nuc1Overlaps)),rep(0,times=nrow(nuc1Not_ov)),
+                    rep(1,times=nrow(bov_train)),rep(0,times=nrow(bno_train)) ))
+y_test_cat <- to_categorical(y_test,2)
+y_test_cat <- y_test_cat[,c(2,1)]
 
-# two category data sets
-putenh <- rbind(BPMoverlaps,bact_ov)
-noise <- rbind(BPMnot_ov,bact_no)
+putenh <- rbind(Hov,bov)
+noise <- rbind(Hnot_ov,bnot_ov)
 
+putenhno <- floor(nrow(putenh)/8)
+noiseno <- floor(nrow(noise)/8)
 
 # splitting the datasets for training & testing
+
 set_training_valid <- function(cond1,cond2,n,n2){  
        overlap_ind <- sample(dim(cond1)[1], n) 
        noov_ind <- sample(dim(cond2)[1], n2)
@@ -84,38 +92,16 @@ set_training_valid <- function(cond1,cond2,n,n2){
        cond2left <- dim(cond2)[1]-n2
         
        # putative enhancers are first and get number 1
-       y_training <- matrix(c(rep(1,times=cond1left),rep(0,times=cond2left)),
-                            nrow=(cond1left+cond2left), ncol=1,
+       y_training <- matrix(c(rep(c(1,0),times=cond1left),rep(c(0,1),times=cond2left)),
+                            nrow=(cond1left+cond2left), ncol=2,
                             byrow=TRUE,
-                            dimnames= list(c(1:(cond1left+cond2left)),"putenh") )
-       y_valid <- matrix(c(rep(1,times=n),rep(0,times=n2)),
-                        nrow=(n+n2), ncol=1,
+                            dimnames= list(c(1:(cond1left+cond2left)),c("putenh","noise")) )
+       y_valid <- matrix(c(rep(c(1,0),times=n),rep(c(0,1),times=n2)),
+                        nrow=(n+n2), ncol=2,
                         byrow=TRUE,
-                        dimnames= list(c(1:(n+n2)),"putenh") )
+                        dimnames= list(c(1:(n+n2)),c("putenh","noise")) )
        return(list(x_training,y_training, x_valid,y_valid))
 }
-
-putenhno <- floor(nrow(putenh)/8)
-noiseno <- floor(nrow(noise)/8)
-datasets <- set_training_valid(putenh,noise,putenhno,noiseno)
-
-
-## testing (predicting) data
-# data from other replicates for testing. Minus is still before plus
-soxnuc1Ov_file <- fread("sox10_BidirOverlapATAC3kb50bpbinsNuc1BPM.tabular")
-soxnuc1NoOv_file <- fread("sox10_BidirNotOverlapATAC3kb50bpbinsNuc1BPM.tabular")
-nuc1Overlaps <- as.matrix(soxnuc1Ov_file[,1:120])
-nuc1Not_ov <- as.matrix(soxnuc1NoOv_file[,1:120])
-colnames(nuc1Overlaps) <- bins
-colnames(nuc1Not_ov) <- bins
-x_bact_test <- data[,121:240]
-colnames(x_bact_test) <- bins
-
-x_test <- as.matrix(rbind(nuc1Overlaps,nuc1Not_ov,x_bact_test))
-y_test_cat <- as.matrix( c(rep(1,times=nrow(nuc1Overlaps)),rep(0,times=nrow(nuc1Not_ov)),data$V241) )
-#y_test <- to_categorical(y_test_cat,2)
-
-
 
 ## setting up combinations of epoch numbers and data splits to examine the model
 ep <- c(5,10,20) 
@@ -165,7 +151,7 @@ for(i in 1:length(ep)){
                         
         # Get confusion matrix for predictions
         classes <- model %>% predict_classes(x_test, batch_size=100)
-        ct <- table(round(classes),y_test_cat)
+        ct <- table(round(classes),y_test)
         cm <- as.matrix(ct)
         print(cm)
         print(multi_class_rates(cm))
