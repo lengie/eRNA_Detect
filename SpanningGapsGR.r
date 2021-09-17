@@ -45,7 +45,7 @@ chrLimitCheckNoIntGR <- function(gr,limit){
     keep <- GRanges()
     for(i in 1:nrow(limit)){
         tmp <- gr[which(seqnames(gr)==as.character(limit$chrom[i])),]
-        over <- which(end(tmp)>limit$size[i]))
+        over <- which(end(tmp)>limit$size[i])
         end(tmp)[over] <- limit$size[i]
         keep <- c(keep,tmp)
     }
