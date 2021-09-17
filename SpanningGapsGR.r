@@ -27,9 +27,11 @@ sumstat <- function(index){
     print(length(index))}
 
 # function to remove negative values
-nonzero <- function(df){for(i in 1:nrow(df)){
-    if(df$start[i]<1) df$start[i]=1}
-return(df)}
+nonzeroGR <- function(gr){
+    neg <- which(start(gr)<1)
+    start(gr)[neg] <- 1
+return(gr)}
+
 
 #make sure no coding regions were brought back in
 remcoding <- function(gr){
@@ -39,44 +41,18 @@ remcoding <- function(gr){
 }
 
 #make sure that adding flanking regions doesn't go beyond chromosome length
-chrLimitCheck <- function(df,gen){
-    temp <- c()
-    limit <- getChromInfoFromUCSC(gen)
-    for(i in 1:nrow(df)){
-        for(j in 1:nrow(limit)){
-            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
-                df$end[i]=limit$size[j]  
-            }
-        }
+chrLimitCheckNoIntGR <- function(gr,limit){
+    keep <- GRanges()
+    for(i in 1:nrow(limit)){
+        tmp <- gr[which(seqnames(gr)==as.character(limit$chrom[i])),]
+        over <- which(end(tmp)>limit$size[i]))
+        end(tmp)[over] <- limit$size[i]
+        keep <- c(keep,tmp)
     }
-    return(df)
-} 
-
-# or use this when connected to a node and cannot access internet
-chrLimitCheckNoInt <- function(df,limit){
-    for(i in 1:nrow(df)){
-        for(j in 1:nrow(limit)){
-            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
-                df$end[i]=limit$size[j]  
-            }
-        }
-    }
-    return(df)
-} 
+    return(keep)
+}
 limit <- fread("danRer7.chrom.sizes")
 colnames(limit) <- c("chrom","size")
-
-
-chrLimitCheckNoIntGR <- function(df,limit){
-    for(i in 1:length(df)){
-        for(j in 1:nrow(limit)){
-            if(as.character(seqnames(df)[i])==as.character(limit$chrom[j]) & as.numeric(end(df)[i])>limit$size[j]){
-                end(df)[i]=limit$size[j]  
-            }
-        }
-    }
-    return(df)
-} 
 
 ##
 # loading reproducible bidirectional regions and cluster list
