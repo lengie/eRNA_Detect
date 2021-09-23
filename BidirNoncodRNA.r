@@ -84,6 +84,13 @@ flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
 bamread <- readGAlignmentPairs(bamfile, param=ScanBamParam(flag=flag))
 gbam <- GRanges(bamread)
 
+loadBAM <- function(file){
+     flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
+     reads <- readGAlignments(file,param=ScanBamParam(flag=flag))
+     return(reads)
+}
+
+
 ncOverlaps <- function(gbam,coding,filename){
 	seqlevelsStyle(gbam) <- "UCSC"
 	seqlevelsStyle(coding) <- "UCSC"
