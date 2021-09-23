@@ -167,17 +167,19 @@ replicateReprod <- function(rep1,rep2,file,dist=0){
 
 
 readCounts <- function(df,gr){
-	feat <- GRanges(seqnames=df$chr,ranges=IRanges(start=df$start,end=df$end))  
+	feat <- GRanges(seqnames=df$chr,ranges=IRanges(start=df$start,end=df$end),strand=dr$strand)  
 	reads <- summarizeOverlaps(features=feat,reads=gr,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
 	read_counts <- assay(reads)
         return(read_counts)	
 }
 
-twoRepCountsStranded <- function(df,rep1plus,rep1minus,rep2plus,rep2minus){
-        oneplus <- readCounts(df,rep1plus)
-        oneminus <- readCounts(df,rep1minus)
-        twoplus <- readCounts(df,rep2plus)
-        twominus <- readCounts(df,rep2minus)
+twoRepCountsStranded <- function(df,rep1,rep2){
+	df$strand='+'
+	oneplus <- readCounts(df,rep1)
+        twoplus <- readCounts(df,rep2)
+	df$strand='-'
+	oneminus <- readCounts(df,rep1)
+        twominus <- readCounts(df,rep2)
         df <- dplyr::mutate(df,size=end-start)
         df <- cbind(df,oneplus,oneminus,twoplus,twominus)
         return(df)
