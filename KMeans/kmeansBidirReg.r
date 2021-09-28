@@ -116,6 +116,35 @@ ans.kmeans.par <- foreach(i=1:15) %dopar% {
 
 fviz_cluster(ans.kmeans.par, data=scaledata[,1:60], geom = "point", repel=TRUE) + ggtitle("sox10 Reprod Bidir Reg Scaled, k = 9") + geom_point(aes(shape=lab_col))
 
+# getting median and max of each cluster
+
+sumstatsCluster <- function(dt,clusterlist){
+    for(i in 1:length(clusterlist)){
+        dd <- cbind(as.data.frame(dt), cluster = clusterlist[[i]]$cluster)
+        c <- length(clusterlist[[i]]$size)
+        for(j in 1:c){
+            temp <- dplyr::filter(dd,cluster==j)
+            print(paste("Run ",i,", cluster ",j,", sox10 median and max are",sep=""))
+            print(median(c(temp$sox10_871_HisatDefault.primary.plus,temp$sox10_873_HisatDefault.primary.plus)))
+            print(max(c(temp$sox10_871_HisatDefault.primary.plus,temp$sox10_873_HisatDefault.primary.plus)))
+            print("sox10 minus")
+            print(median(c(temp$sox10_871_HisatDefault.primary.minus,temp$sox10_873_HisatDefault.primary.minus)))
+            print(max(c(temp$sox10_871_HisatDefault.primary.minus,temp$sox10_873_HisatDefault.primary.minus)))
+            print("b-actin plus")
+            print(median(c(temp$bactin_869_HisatDefault.primary.plus,temp$bactin_870_HisatDefault.primary.plus)))
+            print(max(c(temp$bactin_869_HisatDefault.primary.plus,temp$bactin_870_HisatDefault.primary.plus)))
+            print("b-actin minus")
+            print(median(c(temp$bactin_869_HisatDefault.primary.minus,temp$bactin_870_HisatDefault.primary.minus)))
+            print(max(c(temp$bactin_869_HisatDefault.primary.minus,temp$bactin_870_HisatDefault.primary.minus)))
+            print("ribo-seq plus")
+            print(median(c(temp$sox10_riboseq867_HisatDefault.primary.plus,temp$sox10_riboseq873_HisatDefault.primary.plus)))
+            print(max(c(temp$sox10_riboseq867_HisatDefault.primary.plus,temp$sox10_riboseq873_HisatDefault.primary.plus)))
+            print("ribo-seq minus")
+            print(median(c(temp$sox10_riboseq867_HisatDefault.primary.minus,temp$sox10_riboseq873_HisatDefault.primary.minus)))
+            print(max(c(temp$sox10_riboseq867_HisatDefault.primary.minus,temp$sox10_riboseq873_HisatDefault.primary.minus)))
+    }}
+}
+
 #tSNE
 unique <- unique(scaledata)
 tsnescaled <- Rtsne(scaledata[,1:60], dims = 2, perplexity=30, verbose=TRUE, max_iter = 100,num_threads=0)
