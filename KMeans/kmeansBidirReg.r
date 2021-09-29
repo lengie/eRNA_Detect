@@ -142,7 +142,9 @@ sumstatsCluster <- function(dt,clusterlist){
                                             max(c(temp$sox10_riboseq867_HisatDefault.primary.minus,temp$sox10_riboseq873_HisatDefault.primary.minus)))
                                 )
             row.names(current) <- c("median","max")
-            output[[i*j]]=current
+            output = append(output,list(current))
+            #output[[i*j]]=current
+            #output = c(list(output), current)
     }}
     return(output)
 }
