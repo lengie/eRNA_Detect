@@ -242,4 +242,7 @@ extendBigwig <- function(bw,step,strand){
     }else{return("strand must either be '-' or '+'")}
     dt <- dt[, lapply(score, sum), by=list(chr, start, end)]
     gr <- GRanges(as.data.frame(dt))
+    gr <- nonzeroGR(gr)
+    gr <- chrLimitCheckNoIntGR(gr,limit)
+    return(gr)
 }
