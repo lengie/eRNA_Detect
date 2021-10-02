@@ -125,7 +125,7 @@ underten13 <- ncOverlaps(gr13,coding,"GSM530213_FlankedNoncoding")
 underten14 <- ncOverlaps(gr14,coding,"GSM530214_FlankedNoncoding")
 underten16 <- ncOverlaps(gr16,coding,"GSM530216_FlankedNoncoding")
  
-
+## wrote a code to move all of this inside R and as a function instead of writing it out; until I put it in here see the BidirNoncoding.r file
 ## outside of R -- merge the individual strands and sum scores of the merged regions
 bedtools sort -i GSM530210_FlankedNoncodingUnder10k.bed > GSM530210_FlankedNoncodingSorted.bed 
 bedtools merge -i GSM530210_FlankedNoncodingSorted.bed -d 0 -S - -c 5 -o sum > GSM530210_FlankedNoncodingScorePlusOnly.bed 
@@ -203,7 +203,24 @@ bedtools merge -i GSM530214_FlankedNoncodingScoreOverlapsToMergeSorted.bed -d 0 
 bedtools sort -i GSM530216_FlankedNoncodingScoreOverlapsToMerge.bed > GSM530216_FlankedNoncodingScoreOverlapsToMergeSorted.bed
 bedtools merge -i GSM530216_FlankedNoncodingScoreOverlapsToMergeSorted.bed -d 0 -c 5 -o sum > GSM530216_FlankedNoncodingScoreOverlapsMerged.bed
 
- 
+# functions to make sure there are no negative indices or not going over chromosome bounds
+nonzeroGR <- function(gr){
+    neg <- which(start(gr)<1)
+    start(gr)[neg] <- 1
+return(gr)}
+
+chrLimitCheckNoIntGR <- function(gr,limit){
+    keep <- GRanges()
+    for(i in 1:nrow(limit)){
+        tmp <- gr[which(seqnames(gr)==as.character(limit$chrom[i])),]
+        over <- which(end(tmp)>limit$size[i])
+        end(tmp)[over] <- limit$size[i]
+        keep <- c(keep,tmp)
+    }
+    return(keep)
+}
+limit <- fread("ncbi37.chrom.sizes")
+colnames(limit) <- c("chrom","size") 
  
 ## extending the bigwig files directly 
 extendBigwig <- function(bw,step,strand){
