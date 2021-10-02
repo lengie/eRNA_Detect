@@ -210,16 +210,16 @@ extendBigwig <- function(bw,step,strand){
     dt <- data.table()
     if(strand=='-'){
         for(i in 1:length(bw)){
-            dt <- append(dt,list(chr=seqnames(bw)[i],start=start(bw)[i],end=end(bw)[i],score=mcols(bw)$score[i]))
+            dt <- rbind(dt,list(chr=as.character(seqnames(bw)[i]),start=start(bw)[i],end=end(bw)[i],score=mcols(bw)$score[i]))
             for(j in 1:step-1){
-                dt <- rbind(dt,list(chr=seqnames(bw)[i],start=start(bw)[i]+j,end=start(bw)[i]+j,score=mcols(bw)$score[i]))
+                dt <- rbind(dt,list(chr=as.character(seqnames(bw)[i]),start=start(bw)[i]+j,end=start(bw)[i]+j,score=mcols(bw)$score[i]))
             }
         }
     }else if(strand=='+'){
         for(i in 1:length(bw)){
-            dt <- append(dt,data.table(chr=seqnames(bw)[i],start=start(bw)[i],end=end(bw)[i],score=mcols(bw)$score[i]))
+            dt <- rbind(dt,data.table(chr=as.character(seqnames(bw)[i]),start=start(bw)[i],end=end(bw)[i],score=mcols(bw)$score[i]))
             for(j in 1:step-1){
-                dt <- rbind(dt,list(chr=seqnames(bw)[i],start=start(bw)[i]-j,end=start(bw)[i]-j,score=mcols(bw)$score[i]))
+                dt <- rbind(dt,list(chr=as.character(seqnames(bw)[i]),start=start(bw)[i]-j,end=start(bw)[i]-j,score=mcols(bw)$score[i]))
             }
         }
     }else{return("strand must either be '-' or '+'")}
