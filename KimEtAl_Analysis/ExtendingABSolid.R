@@ -223,26 +223,58 @@ limit <- fread("ncbi37.chrom.sizes")
 colnames(limit) <- c("chrom","size") 
  
 ## extending the bigwig files directly 
-extendBigwig <- function(bw,step,strand){
-    dt <- data.table()
+expandBigwig <- function(bw,step,strand,file){
     if(strand=='-'){
-        for(i in 1:length(bw)){
-            dt <- rbind(dt,list(chr=as.character(seqnames(bw)[i]),start=start(bw)[i],end=end(bw)[i],score=mcols(bw)$score[i]))
+            new <- data.frame(chr=seqnames(bw),
+                              start=start(bw),
+                              end=end(bw)+(step-1),
+                              score=mcols(bw)$score)
+        }
+    else if(strand=='+'){
+            new <- data.frame(chr=seqnames(bw),
+                              start=start(bw)-step,
+                              end=end(bw),
+                              score=mcols(bw)$score )
+        }
+    else{return("strand must either be '-' or '+'")}
+    bedfile <- paste(file,"expandPreGenomeCov.bed",sep="")
+    write.table(new,bedfile,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+}
+
+# genome file is stored as ncbi37.chrom.sizes, have that as separate input?
+sortAndCov <- function(file){
+    bedfile <- paste(file,"expandPreGenomeCov.bed",sep="")
+    system(paste("bedtools sort -i ",bedfile," > ",file,"expandPreGenomeCovSorted.bed",sep=""))
+    system(paste("bedtools genomecov -i ",file,"expandPreGenomeCovSorted.bed -d -g ncbi37.chrom.sizes > ",file,"GenCov.bg",sep=""))
+    new <- fread(paste(file,"GenCov.bg",sep=""))
+    colnames(new) <- c("chr","start","end","score")
+	print(nrow(new))
+    return(new)
+}
+
+correctBWScore <- function(newbw,oldbw,step,strand){
+    # get the regions in the new bigwig file that were in the old bigwig file
+    ov <- findOverlaps(oldbw,newbw)
+    # should be ordered by oldbigwig and there should be a one-to-one relationship
+    # create a new column to store the new scores
+    newbw$rightscore <- c()
+    if(strand=='-'){
+        for(i in 1:length(ov)){
             for(j in 1:step-1){
-                dt <- rbind(dt,list(chr=as.character(seqnames(bw)[i]),start=start(bw)[i]+j,end=start(bw)[i]+j,score=mcols(bw)$score[i]))
+                newbw$score[j] <- newbw$score[j] + mcols(oldbw)$score[i]
             }
+        print(i)
         }
     }else if(strand=='+'){
-        for(i in 1:length(bw)){
-            dt <- rbind(dt,data.table(chr=as.character(seqnames(bw)[i]),start=start(bw)[i],end=end(bw)[i],score=mcols(bw)$score[i]))
-            for(j in 1:step-1){
-                dt <- rbind(dt,list(chr=as.character(seqnames(bw)[i]),start=start(bw)[i]-j,end=start(bw)[i]-j,score=mcols(bw)$score[i]))
-            }
+        for(i in 1:length(ov)){
+
+        print(i)
         }
     }else{return("strand must either be '-' or '+'")}
-    dt <- dt[, lapply(.SD, sum), by=list(chr, start, end)]
-    gr <- GRanges(as.data.frame(dt))
-    gr <- nonzeroGR(gr)
-    gr <- chrLimitCheckNoIntGR(gr,limit)
-    return(gr)
+    print("removing negatives")
+    gr <- nonzeroGR(newbw)
+    print("checking limits")
+    gr <- chrLimitCheckNoIntGR(newbw,limit)
+    return(newbw)
 }
+
