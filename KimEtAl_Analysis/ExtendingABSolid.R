@@ -253,13 +253,14 @@ sortAndCov <- function(file){
 }
 
 # new idea: iterate over all score options
-genCovScore <- function(bg,bw){ # here the bedgraph is a data frame and the bigwig is a GRanges object
+genCovScore <- function(bg,bw){ #here the bedgraph is a data frame and the bigwig is a GRanges object
     iter <- factor(bg$score)
     print(length(levels(iter))) 
     for (i in length(levels(iter))){
         orig <- dplyr::filter(bw,score==levels(iter)[i])
         overlap <- findOverlaps(GRanges(orig),bw)
-        mcols(bw)$score[subjectHits(overlap)] <- sapply(mcols(bw)$score[subjectHits(overlap)], function(x), x*levels(iter)[i])
+        mcols(bw)$score[subjectHits(overlap)] <- sapply(mcols(bw)$score[subjectHits(overlap)], function(x){x*as.numeric(levels(iter)[i])})
     }
     return(bw)
 }
+
