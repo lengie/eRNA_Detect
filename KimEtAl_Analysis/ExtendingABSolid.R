@@ -252,29 +252,14 @@ sortAndCov <- function(file){
     return(new)
 }
 
-correctBWScore <- function(newbw,oldbw,step,strand){
-    # get the regions in the new bigwig file that were in the old bigwig file
-    ov <- findOverlaps(oldbw,newbw)
-    # should be ordered by oldbigwig and there should be a one-to-one relationship
-    # create a new column to store the new scores
-    newbw$rightscore <- c()
-    if(strand=='-'){
-        for(i in 1:length(ov)){
-            for(j in 1:step-1){
-                newbw$score[j] <- newbw$score[j] + mcols(oldbw)$score[i]
-            }
-        print(i)
-        }
-    }else if(strand=='+'){
-        for(i in 1:length(ov)){
-
-        print(i)
-        }
-    }else{return("strand must either be '-' or '+'")}
-    print("removing negatives")
-    gr <- nonzeroGR(newbw)
-    print("checking limits")
-    gr <- chrLimitCheckNoIntGR(newbw,limit)
-    return(newbw)
+# new idea: iterate over all score options
+genCovScore <- function(bg,bw){ # here the bedgraph is a data frame and the bigwig is a GRanges object
+    iter <- factor(bg$score)
+    print(length(levels(iter))) 
+    for (i in length(levels(iter))){
+        orig <- dplyr::filter(bw,score==levels(iter)[i])
+        overlap <- findOverlaps(GRanges(orig),bw)
+        mcols(bw)$score[subjectHits(overlap)] <- sapply(mcols(bw)$score[subjectHits(overlap)], function(x), x*levels(iter)[i])
+    }
+    return(bw)
 }
-
