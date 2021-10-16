@@ -269,6 +269,6 @@ genCovScore <- function(ext,reg){ #here the extended bedgraph is a data frame an
 								    })
     }
     # sanity check: none of the scores should be zero, if we are covering only BPs with scores
-	print(paste("Regions with zero: ",length(which(mcols(reg)$score==o)),sep=""))
+	print(paste("Regions with zero: ",length(which(mcols(reg)$score==0)),sep=""))
 	return(reg)
 }
