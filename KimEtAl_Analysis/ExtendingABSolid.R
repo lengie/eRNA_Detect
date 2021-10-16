@@ -253,19 +253,22 @@ sortAndCov <- function(file){
 }
 
 # new idea: iterate over all score options
-genCovScore <- function(bg,bw){ #here the bedgraph is a data frame and the bigwig is a GRanges object
+genCovScore <- function(ext,reg){ #here the extended bedgraph is a data frame and the regions are a GRanges object
 	# set newscores to zero
+	mcols(reg)$score <- 0
 	# sum all the original scores that overlap at each location
-    iter <- factor(bg$score)
-    print(length(levels(iter))) 
+    iter <- factor(ext$score)
+    print(paste("Number of discrete scores: ",length(levels(iter)),sep=""))
     for (i in length(levels(iter))){
-        orig <- dplyr::filter(bg,score==levels(iter)[i])
-        overlap <- findOverlaps(GRanges(orig),bw)
-        mcols(bw)$score[subjectHits(overlap)] <- sapply(mcols(bw)$score[subjectHits(overlap)], function(x){x*as.numeric(levels(iter)[i])})
+		# score in the original bigwig/bedgraph file
+        orig <- dplyr::filter(ext,score==levels(iter)[i])
+        overlap <- findOverlaps(GRanges(orig),reg)
+        mcols(reg)$score[subjectHits(overlap)] <- sapply(mcols(reg)$score[subjectHits(overlap)], 
+							function(x){
+						  		    x + as.numeric(levels(iter)[i])
+								    })
     }
     # sanity check: none of the scores should be zero, if we are covering only BPs with scores
-	print("Regions with zero: ",length(which(mcols(bw)$score==o)))
-	return(bw)
+	print(paste("Regions with zero: ",length(which(mcols(reg)$score==o)),sep=""))
+	return(reg)
 }
-
-
