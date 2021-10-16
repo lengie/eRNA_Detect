@@ -254,6 +254,8 @@ sortAndCov <- function(file){
 
 # new idea: iterate over all score options
 genCovScore <- function(bg,bw){ #here the bedgraph is a data frame and the bigwig is a GRanges object
+	# set newscores to zero
+	# sum all the original scores that overlap at each location
     iter <- factor(bg$score)
     print(length(levels(iter))) 
     for (i in length(levels(iter))){
@@ -261,6 +263,9 @@ genCovScore <- function(bg,bw){ #here the bedgraph is a data frame and the bigwi
         overlap <- findOverlaps(GRanges(orig),bw)
         mcols(bw)$score[subjectHits(overlap)] <- sapply(mcols(bw)$score[subjectHits(overlap)], function(x){x*as.numeric(levels(iter)[i])})
     }
-    return(bw)
+    # sanity check: none of the scores should be zero, if we are covering only BPs with scores
+	print("Regions with zero: ",length(which(mcols(bw)$score==o)))
+	return(bw)
 }
+
 
