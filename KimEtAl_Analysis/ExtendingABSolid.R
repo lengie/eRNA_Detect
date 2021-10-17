@@ -259,7 +259,7 @@ genCovScore <- function(ext,reg){ #here the extended bedgraph is a data frame an
 	# sum all the original scores that overlap at each location
     iter <- factor(ext$score)
     print(paste("Number of discrete scores: ",length(levels(iter)),sep=""))
-    for (i in length(levels(iter))){
+    for (i in 1:length(levels(iter))){
 		# score in the original bigwig/bedgraph file
         orig <- dplyr::filter(ext,score==levels(iter)[i])
         overlap <- findOverlaps(GRanges(orig),reg)
