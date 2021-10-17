@@ -272,3 +272,8 @@ genCovScore <- function(ext,reg){ #here the extended bedgraph is a data frame an
 	print(paste("Regions with zero: ",length(which(mcols(reg)$score==0)),sep=""))
 	return(reg)
 }
+
+saveBG <- function(bg,file){
+    new <- data.frame(chr=seqnames(bg),start=start(bg),end=end(bg),score=mcols(bg)$score)
+    write.table(new,file,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+}
