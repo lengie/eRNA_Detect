@@ -26,7 +26,7 @@ lowcount <- function(bed,bam){
     print(paste("Regions with with 0 reads on minus strand: ",length(which(genecounts[,2]==0)),sep=""))
     widthplot <- data.frame(rpb=c(genecounts[,1]/width(feat) , genecounts[,2]/width(feat)),
                     strand=rep(c('+','-'),each=nrow(genecounts)))
-    justreadsplot <- data.frame(rpb=c(genecounts[,1],genecounts[,2]),
+    justreadsplot <- data.frame(counts=c(genecounts[,1],genecounts[,2]),
                     strand=rep(c('+','-'),each=nrow(genecounts)))
     return(list(widthplot,justreadsplot))
 }
