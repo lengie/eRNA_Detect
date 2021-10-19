@@ -24,7 +24,7 @@ lowcount <- function(bed,bam){
     print(paste("Number of regions: ",dim(genecounts),sep="")) #this is just the number of bidirectional regions
     print(paste("Regions with with 0 reads on plus strand: ",length(which(genecounts[,1]==0)),sep=""))
     print(paste("Regions with with 0 reads on minus strand: ",length(which(genecounts[,2]==0)),sep=""))
-    widthplot <- data.frame(rpb=c(genecounts[,1]/width(feat) , genecounts[,2]/width(feat),
+    widthplot <- data.frame(rpb=c(genecounts[,1]/width(feat) , genecounts[,2]/width(feat)),
                     strand=rep(c('+','-'),each=nrow(genecounts)))
     justreadsplot <- data.frame(rpb=c(genecounts[,1],genecounts[,2]),
                     strand=rep(c('+','-'),each=nrow(genecounts)))
