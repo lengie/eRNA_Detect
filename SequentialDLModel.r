@@ -75,9 +75,9 @@ putenhno <- floor(nrow(putenh)/8)
 noiseno <- floor(nrow(noise)/8)
 
 # splitting the datasets for training & testing
-
-set_training_valid <- function(cond1,cond2,n,n2){  
-       overlap_ind <- sample(dim(cond1)[1], n) 
+set_training_valid <- function(cond1,cond2,n,n2){ #put_enh first then not_enh 
+       # get indices for a selection of the 
+	   overlap_ind <- sample(dim(cond1)[1], n) 
        noov_ind <- sample(dim(cond2)[1], n2)
     
        # rbind the putenh large fraction and noise large fraction
@@ -100,6 +100,14 @@ set_training_valid <- function(cond1,cond2,n,n2){
                         nrow=(n+n2), ncol=2,
                         byrow=TRUE,
                         dimnames= list(c(1:(n+n2)),c("putenh","noise")) )
+						
+	   # shuffle the indices around
+	   new_training <- sample(nrow(x_training))
+	   new_valid <- sample(nrow(x_valid))
+	   x_training <- x_training[new_training,]
+	   y_training <- y_training[new_training,]
+	   x_valid <- x_valid[new_valid]
+	   y_valid <- y_valid[new_valid]
        return(list(x_training,y_training, x_valid,y_valid))
 }
 
