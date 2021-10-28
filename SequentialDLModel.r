@@ -10,6 +10,7 @@ library(data.table)
 library(keras)
 library(tensorflow)
 library(dplyr)
+library(kerasR)
 options(scipen=999)
 # use a conda environment with tensorflow and keras loaded
 use_condaenv("/project/rohs_102/keras")
