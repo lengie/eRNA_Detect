@@ -6,6 +6,8 @@
 ### Output: predictions
 
 ## loading required packages
+library(reticulate)
+reticulate::use_python("/spack/apps/anaconda3/2021.05/bin/python",required=T)
 library(data.table)
 library(keras)
 library(tensorflow)
