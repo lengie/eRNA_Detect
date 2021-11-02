@@ -28,6 +28,45 @@ multi_class_rates <- function(confusion_matrix) {
                       false_negatives, row.names = names(true_positives)))
 }
 
+# splitting the datasets for training & testing
+set_training_valid <- function(cond1,cond2,n,n2){ #put_enh first then not_enh 
+       # get indices for a selection of the 
+	   overlap_ind <- sample(dim(cond1)[1], n) 
+       noov_ind <- sample(dim(cond2)[1], n2)
+    
+       # rbind the putenh large fraction and noise large fraction
+       x_training <- rbind(as.matrix(cond1[-overlap_ind,]),
+                           as.matrix(cond2[-noov_ind,] ))
+       # rbind the smaller fractions, overlap then not-overlap below
+       x_valid <- rbind(as.matrix(cond1[overlap_ind,]),
+                        as.matrix(cond2[noov_ind,] ))
+ 
+       # categories should be a binary class matrix. c("noise","putenh") c(0,1)
+       cond1left <- dim(cond1)[1]-n
+       cond2left <- dim(cond2)[1]-n2
+        
+       # putative enhancers are first and get number 1
+       y_training <- matrix(c(rep(c(1,0),times=cond1left),rep(c(0,1),times=cond2left)),
+                            nrow=(cond1left+cond2left), ncol=2,
+                            byrow=TRUE,
+                            dimnames= list(c(1:(cond1left+cond2left)),c("putenh","noise")) )
+       y_valid <- matrix(c(rep(c(1,0),times=n),rep(c(0,1),times=n2)),
+                        nrow=(n+n2), ncol=2,
+                        byrow=TRUE,
+                        dimnames= list(c(1:(n+n2)),c("putenh","noise")) )
+						
+	   # shuffle the indices around
+	   new_training <- sample(nrow(x_training))
+	   new_valid <- sample(nrow(x_valid))
+	   x_training <- x_training[new_training,]
+	   y_training <- y_training[new_training,]
+	   x_valid <- x_valid[new_valid]
+	   y_valid <- y_valid[new_valid]
+       return(list(x_training,y_training, x_valid,y_valid))
+}
+
+
+# INITIAL ITERATIONS
 ## column names to keep track of everything
 # plus strand came first, then minus in createMatrix
 bins <- c(paste(seq(-30,-1,by=1),"plus",sep=""),
@@ -77,42 +116,67 @@ noise <- rbind(Hnot_ov,bnot_ov)
 putenhno <- floor(nrow(putenh)/8)
 noiseno <- floor(nrow(noise)/8)
 
-# splitting the datasets for training & testing
-set_training_valid <- function(cond1,cond2,n,n2){ #put_enh first then not_enh 
-       # get indices for a selection of the 
-	   overlap_ind <- sample(dim(cond1)[1], n) 
-       noov_ind <- sample(dim(cond2)[1], n2)
-    
-       # rbind the putenh large fraction and noise large fraction
-       x_training <- rbind(as.matrix(cond1[-overlap_ind,]),
-                           as.matrix(cond2[-noov_ind,] ))
-       # rbind the smaller fractions, overlap then not-overlap below
-       x_valid <- rbind(as.matrix(cond1[overlap_ind,]),
-                        as.matrix(cond2[noov_ind,] ))
- 
-       # categories should be a binary class matrix. c("noise","putenh") c(0,1)
-       cond1left <- dim(cond1)[1]-n
-       cond2left <- dim(cond2)[1]-n2
-        
-       # putative enhancers are first and get number 1
-       y_training <- matrix(c(rep(c(1,0),times=cond1left),rep(c(0,1),times=cond2left)),
-                            nrow=(cond1left+cond2left), ncol=2,
-                            byrow=TRUE,
-                            dimnames= list(c(1:(cond1left+cond2left)),c("putenh","noise")) )
-       y_valid <- matrix(c(rep(c(1,0),times=n),rep(c(0,1),times=n2)),
-                        nrow=(n+n2), ncol=2,
-                        byrow=TRUE,
-                        dimnames= list(c(1:(n+n2)),c("putenh","noise")) )
-						
-	   # shuffle the indices around
-	   new_training <- sample(nrow(x_training))
-	   new_valid <- sample(nrow(x_valid))
-	   x_training <- x_training[new_training,]
-	   y_training <- y_training[new_training,]
-	   x_valid <- x_valid[new_valid]
-	   y_valid <- y_valid[new_valid]
-       return(list(x_training,y_training, x_valid,y_valid))
-}
+
+## LATER ITERATION AFTER DATA RE ANALYZED, two separate methodologies
+h0_enh <- fread("214_bidir_enh_overlap_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)
+h6_enh <- fread("216_bidir_enh_overlap_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)
+sox1_enh <- fread("sox10_871_bidirATACnoribo_pt1rpb_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)
+sox2_enh <- fread("sox10_873_bidirATACnoribo_pt1rpb_3kb_50bpTEST.tabular",header=FALSE) %>% replace(is.na(.), 0)
+
+sox1_no <- fread("sox10_871_bidirUnder500bpMerged800bpNoATACOverlap.tabular",header=FALSE) %>% replace(is.na(.), 0)
+sox2_no <- fread("sox10_873_bidirUnder500bpMerged800bpNoATACOverlap.tabular",header=FALSE) %>% replace(is.na(.), 0)
+h0_no <- fread("214_bidir_no_enh_overlap_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)%>% replace(is.na(.), 0)
+h6_no <- fread("216_bidir_no_enh_overlap_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)%>% replace(is.na(.), 0)
+
+sox1_enh[sox1_enh>1] <- 1
+sox1_no[sox1_no>1] <- 1
+sox2_enh[sox2_enh>1] <- 1
+sox2_no[sox2_no>1] <- 1
+
+
+# the Kim et al data for minus strand has a negative sign in front of the minus strand scores
+h0_enh[,61:120] <- (-1)*h0_enh[,61:120]
+h6_enh[,61:120] <- (-1)*h6_enh[,61:120]
+h0_no[,61:120] <- (-1)*h0_no[,61:120]
+h6_no[,61:120] <- (-1)*h6_no[,61:120]
+
+# changed bin name so columns do not start with a negative sign or number
+bins <- c(paste("plus",seq(-30,-1,by=1),sep=""),
+            paste("plus",seq(1,30,by=1),sep=""),
+            paste("minus",seq(-30,-1,by=1),sep=""),
+            paste("minus",seq(1,30,by=1),sep="")) #LATER: edited to not start with a number or negative
+colnames(h0_enh) <- bins
+colnames(h0_no) <- bins
+colnames(h6_enh) <- bins
+colnames(h6_no) <- bins
+colnames(sox1_enh) <- bins
+colnames(sox1_no) <- bins	
+colnames(sox2_enh) <- bins
+colnames(sox2_no) <- bins
+
+# NOT manual split, plus three dim for CNN
+putenh <- rbind(h0_enh,h6_enh,sox1_enh,sox2_enh)
+noise <- rbind(h0_no,h6_no,sox1_no,sox2_no)
+
+train_noise_no <- 120000
+train_putenh_no <- floor(nrow(putenh)/2)
+# create the split
+noise_pool_ind <- sample(dim(noise)[1], train_noise_no)
+putenh_pool_ind <- sample(dim(putenh)[1],train_putenh_no)
+train_noise <- noise[noise_pool_ind,]
+train_enh <- putenh[putenh_pool_ind,]
+
+# shuffle and put it all into one dataset
+training <- rbind(train_enh,train_noise)
+shuffle <- sample(nrow(training))
+shuffled <- training[shuffle,]
+reshape <- array_reshape(as.matrix(shuffled),list(length(shuffle),120,1))
+#reshape_k <- k_reshape(as.matrix(shuffled),list(length(shuffle),120,1))
+
+categories <- c(rep(0,times=nrow(train_enh)),rep(1,times=nrow(train_noise)))
+categories <- categories[shuffle]
+shuffled <- as.matrix(shuffled)
+y_all_training <- to_categorical(categories)
 
 ## setting up combinations of epoch numbers and data splits to examine the model
 ep <- c(5,10,20) 
