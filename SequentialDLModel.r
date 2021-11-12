@@ -12,10 +12,10 @@ library(data.table)
 library(keras)
 library(tensorflow)
 library(dplyr)
-library(kerasR)
+#library(kerasR)
 options(scipen=999)
 # use a conda environment with tensorflow and keras loaded
-use_condaenv("/project/rohs_102/keras")
+use_condaenv("keras")
 
 # for evaluation later
 multi_class_rates <- function(confusion_matrix) {
@@ -69,10 +69,10 @@ set_training_valid <- function(cond1,cond2,n,n2){ #put_enh first then not_enh
 # INITIAL ITERATIONS
 ## column names to keep track of everything
 # plus strand came first, then minus in createMatrix
-bins <- c(paste(seq(-30,-1,by=1),"plus",sep=""),
-            paste(seq(1,30,by=1),"plus",sep=""),
-            paste(seq(-30,-1,by=1),"minus",sep=""),
-            paste(seq(1,30,by=1),"minus",sep=""))
+bins <- c(paste("plus",seq(-30,-1,by=1),sep=""),
+            paste("plus",seq(1,30,by=1),sep=""),
+            paste("minus",seq(-30,-1,by=1),sep=""),
+            paste("minus",seq(1,30,by=1),sep="")) 
 # each sample is a row and each feature/bin is a column so it looks like an image file that's been reformatted into a single line
 
 			
@@ -141,10 +141,6 @@ h0_no[,61:120] <- (-1)*h0_no[,61:120]
 h6_no[,61:120] <- (-1)*h6_no[,61:120]
 
 # changed bin name so columns do not start with a negative sign or number
-bins <- c(paste("plus",seq(-30,-1,by=1),sep=""),
-            paste("plus",seq(1,30,by=1),sep=""),
-            paste("minus",seq(-30,-1,by=1),sep=""),
-            paste("minus",seq(1,30,by=1),sep="")) #LATER: edited to not start with a number or negative
 colnames(h0_enh) <- bins
 colnames(h0_no) <- bins
 colnames(h6_enh) <- bins
@@ -161,6 +157,7 @@ noise <- rbind(h0_no,h6_no,sox1_no,sox2_no)
 train_noise_no <- 120000
 train_putenh_no <- floor(nrow(putenh)/2)
 # create the split
+set.seed(123)
 noise_pool_ind <- sample(dim(noise)[1], train_noise_no)
 putenh_pool_ind <- sample(dim(putenh)[1],train_putenh_no)
 train_noise <- noise[noise_pool_ind,]
