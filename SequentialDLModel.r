@@ -172,8 +172,38 @@ reshape <- array_reshape(as.matrix(shuffled),list(length(shuffle),120,1))
 
 categories <- c(rep(0,times=nrow(train_enh)),rep(1,times=nrow(train_noise)))
 categories <- categories[shuffle]
-shuffled <- as.matrix(shuffled)
 y_all_training <- to_categorical(categories)
+
+
+# evaluation data
+#set.seed(123)
+eval_enh <- putenh[-putenh_pool_ind,]
+set.seed(222)
+noise_pool_eval <- sample(dim(noise)[1], train_noise_no)
+eval_noise <- noise[noise_pool_eval,]
+
+# shuffle and put it all into one dataset
+evaluation <- rbind(eval_enh,eval_noise)
+shuffle_e <- sample(nrow(evaluation))
+shuffled_e <- evaluation[shuffle_e,]
+reshape_e <- array_reshape(as.matrix(shuffled_e),list(length(shuffle_e),120,1))
+
+categories_e <- c(rep(0,times=nrow(eval_enh)),rep(1,times=nrow(eval_noise)))
+categories_e <- categories[shuffle_e]
+y_all_eval <- to_categorical(categories_e)
+ 
+
+evals <- model %>% evaluate(reshape_e, y_all_eval, batch_size = 512)
+  
+# Get confusion matrix for predictions
+classes <- model %>% predict(reshape_e) %>% k_argmax()
+ct <- table(round(as.matrix(classes)),y_all_eval[,2])
+cm <- as.matrix(ct)
+cm
+multi_class_rates(cm)
+
+
+
 
 ## setting up combinations of epoch numbers and data splits to examine the model
 ep <- c(5,10,20) 
@@ -231,30 +261,3 @@ for(i in 1:length(ep)){
 }
 
 
-# evaluation data
-#set.seed(123)
-eval_enh <- putenh[-putenh_pool_ind,]
-set.seed(222)
-noise_pool_ind <- sample(dim(noise)[1], train_noise_no)
-eval_noise <- noise[noise_pool_ind,]
-
-# shuffle and put it all into one dataset
-evaluation <- rbind(eval_enh,eval_noise)
-shuffle_e <- sample(nrow(training))
-shuffled_e <- evaluation[shuffle_e,]
-reshape_e <- array_reshape(as.matrix(shuffled_e),list(length(shuffle_e),120,1))
-
-categories_e <- c(rep(0,times=nrow(eval_enh)),rep(1,times=nrow(eval_noise)))
-categories_e <- categories[shuffle_e]
-shuffled_e <- as.matrix(shuffled_e)
-y_all_eval <- to_categorical(categories_e)
- 
-
-evals <- model %>% evaluate(reshape_e, y_all_eval, batch_size = 512)
-  
-# Get confusion matrix for predictions
-classes <- model %>% predict_classes(reshape_e, batch_size=512)
-ct <- table(round(classes),y_test)
-cm <- as.matrix(ct)
-cm
-multi_class_rates(cm)
