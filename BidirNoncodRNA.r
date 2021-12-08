@@ -51,7 +51,7 @@ codingGRange <- function(gtffile,utr3df,utr5df,flank=500){
 			       strand=utr5plus$strand)
 
 	utr3minus <- dplyr::filter(utr3df,strand=="-")
-	utr3plus <- dplyr::filter(utr53df,strand=="+")
+	utr3plus <- dplyr::filter(utr3df,strand=="+")
 	utr3minus <- data.frame(seqnames=utr3minus$seqnames,
 				start=utr3minus$start-500,
 				end=utr3minus$end,
