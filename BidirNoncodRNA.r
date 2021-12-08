@@ -30,53 +30,51 @@ loadbg <- function(bg,strand){
     return(bg)
 }
 
-codingGRange <- function(bamfile,gtffile,flank=500){
-	#load coding regions to remove (coding exons and UTRs)
+codingGRange <- function(gtffile,utr3df,utr5df,flank=500){
 	txdb <- makeTxDbFromGFF(gtffile,
                                format="gtf",
                                circ_seqs = character()
                                )
 	seqlevelsStyle(txdb) <- "UCSC"
 	exons <- exons(txdb)
-	utr5 <- fiveUTRsByTranscript(txdb)
-	utr3 <- threeUTRsByTranscript(txdb)
  
-	#adding a flank (default 500bp) to the UTRs
-	utr5df <- as.data.frame(utr5)
+	#adding a flank (default 500bp) to the UTRs from a file
 	utr5minus <- dplyr::filter(utr5df,strand=="-")
 	utr5plus <- dplyr::filter(utr5df,strand=="+")
 	utr5minus <- data.frame(seqnames=utr5minus$seqnames,
 				start=utr5minus$start,
 				end=utr5minus$end+flank,
-				strand=utr5minus$strand,
-				exon_id=utr5minus$exon_id,
-				exon_name=utr5minus$exon_name)
+				strand=utr5minus$strand)
 	utr5plus <- data.frame(seqnames=utr5plus$seqnames,
 			       start=utr5plus$start-flank,
 			       end=utr5plus$end,
-			       strand=utr5plus$strand,
-			       exon_id=utr5plus$exon_id,
-			       exon_name=utr5plus$exon_name)
+			       strand=utr5plus$strand)
 
-	utr3df <- as.data.frame(utr3)
 	utr3minus <- dplyr::filter(utr3df,strand=="-")
 	utr3plus <- dplyr::filter(utr53f,strand=="+")
 	utr3minus <- data.frame(seqnames=utr3minus$seqnames,
 				start=utr3minus$start-500,
 				end=utr3minus$end,
-				strand=utr3minus$strand,
-				exon_id=utr3minus$exon_id,
-				exon_name=utr3minus$exon_name)
+				strand=utr3minus$strand)
 	utr3plus <- data.frame(seqnames=utr5minus$seqnames,
 			       start=utr5minus$start,
 			       end=utr5minus$end+500,
-			       strand=utr5minus$strand,
-			       exon_id=utr5minus$exon_id,
-			       exon_name=utr5minus$exon_name)
+			       strand=utr5minus$strand)
 	
 	#combing together all regions you want to remove from the bamfile
 	coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
 	return(coding)
+}
+ 
+gr_save <- function(gr,file){
+    df <- data.frame(chr=seqnames(gr),
+                    start = start(gr),
+                    end = end(gr),
+                    ID = 1:length(gr),
+                    score= 1:length(gr),
+                    strand=strand(gr))
+    name <- paste(file,".bed",sep="")
+    write.table(df,name,quote=FALSE,row.name=FALSE,col.names=FALSE,sep='\t')
 }
 
 #read in bam file
