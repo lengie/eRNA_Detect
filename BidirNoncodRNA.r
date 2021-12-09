@@ -30,53 +30,51 @@ loadbg <- function(bg,strand){
     return(bg)
 }
 
-codingGRange <- function(bamfile,gtffile,flank=500){
-	#load coding regions to remove (coding exons and UTRs)
+codingGRange <- function(gtffile,utr3df,utr5df,flank=500){
 	txdb <- makeTxDbFromGFF(gtffile,
                                format="gtf",
                                circ_seqs = character()
                                )
 	seqlevelsStyle(txdb) <- "UCSC"
 	exons <- exons(txdb)
-	utr5 <- fiveUTRsByTranscript(txdb)
-	utr3 <- threeUTRsByTranscript(txdb)
  
-	#adding a flank (default 500bp) to the UTRs
-	utr5df <- as.data.frame(utr5)
+	#adding a flank (default 500bp) to the UTRs from a file
 	utr5minus <- dplyr::filter(utr5df,strand=="-")
 	utr5plus <- dplyr::filter(utr5df,strand=="+")
 	utr5minus <- data.frame(seqnames=utr5minus$seqnames,
 				start=utr5minus$start,
 				end=utr5minus$end+flank,
-				strand=utr5minus$strand,
-				exon_id=utr5minus$exon_id,
-				exon_name=utr5minus$exon_name)
+				strand=utr5minus$strand)
 	utr5plus <- data.frame(seqnames=utr5plus$seqnames,
 			       start=utr5plus$start-flank,
 			       end=utr5plus$end,
-			       strand=utr5plus$strand,
-			       exon_id=utr5plus$exon_id,
-			       exon_name=utr5plus$exon_name)
+			       strand=utr5plus$strand)
 
-	utr3df <- as.data.frame(utr3)
 	utr3minus <- dplyr::filter(utr3df,strand=="-")
-	utr3plus <- dplyr::filter(utr53f,strand=="+")
+	utr3plus <- dplyr::filter(utr3df,strand=="+")
 	utr3minus <- data.frame(seqnames=utr3minus$seqnames,
 				start=utr3minus$start-500,
 				end=utr3minus$end,
-				strand=utr3minus$strand,
-				exon_id=utr3minus$exon_id,
-				exon_name=utr3minus$exon_name)
+				strand=utr3minus$strand)
 	utr3plus <- data.frame(seqnames=utr5minus$seqnames,
 			       start=utr5minus$start,
 			       end=utr5minus$end+500,
-			       strand=utr5minus$strand,
-			       exon_id=utr5minus$exon_id,
-			       exon_name=utr5minus$exon_name)
+			       strand=utr5minus$strand)
 	
 	#combing together all regions you want to remove from the bamfile
 	coding <- c(exons,GRanges(utr5plus),GRanges(utr5minus),GRanges(utr3plus),GRanges(utr3minus))
 	return(coding)
+}
+ 
+gr_save <- function(gr,file){
+    df <- data.frame(chr=seqnames(gr),
+                    start = start(gr),
+                    end = end(gr),
+                    ID = 1:length(gr),
+                    score= 1:length(gr),
+                    strand=strand(gr))
+    name <- paste(file,".bed",sep="")
+    write.table(df,name,quote=FALSE,row.name=FALSE,col.names=FALSE,sep='\t')
 }
 
 #read in bam file
@@ -84,7 +82,16 @@ flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
 bamread <- readGAlignmentPairs(bamfile, param=ScanBamParam(flag=flag))
 gbam <- GRanges(bamread)
 
+loadBAM <- function(file){
+     flag <- scanBamFlag(isSecondaryAlignment=FALSE, isDuplicate=FALSE)
+     reads <- readGAlignments(file,param=ScanBamParam(flag=flag))
+     return(reads)
+}
+
+
 ncOverlaps <- function(gbam,coding,filename){
+	seqlevelsStyle(gbam) <- "UCSC"
+	seqlevelsStyle(coding) <- "UCSC"
 	# find overlaps, remove them
    	overlaps <- findOverlaps(gbam,coding,ignore.strand=FALSE)
 	hits <- gbam[-queryHits(overlaps),]
@@ -107,168 +114,91 @@ ncOverlaps <- function(gbam,coding,filename){
 	}
 
 ## Sort and merge the individual strands outside of R, for each replicate
-bedtools sort -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed
-bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0 -S - > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMergedMinus.bed
-bedtools merge -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kSorted.bed -d 0 -S + > ct711a_150804_hets_nuc1PrimaryNoncodingUnder10kMergedPlus.bed
+sortMerge <- function(filename,dist=0){
+    system(sprintf("bedtools sort -i %s.bed > %sSorted.bed",filename,filename))
+    system(paste("bedtools merge -i ",filename,"Sorted.bed -d ",dist," -S - > ",filename,"MergedMinus.bed",sep=""))
+    system(paste("bedtools merge -i ",filename,"Sorted.bed -d ",dist," -S + > ",filename,"MergedPlus.bed",sep=""))
+}
 
-bedtools sort -i ct711a_150804_hets_nuc1PrimaryNoncodingUnder10k.bed > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed
-bedtools merge -i ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed -d 0 -S - > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kMergedMinus.bed
-bedtools merge -i ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kSorted.bed -d 0 -S + > ct711a_150804_hets_nuc2PrimaryNoncodingUnder10kMergedPlus.bed
-
-###
-## Back in R to reformat and extract only regions with bidirectionality
 #merge the intersections for the wider
-plus_file <- "sox10_Zv9nuc1FlankedNoncodingUnder10kPlusOnlyMerged.bed"
-minus_file <- "sox10_Zv9nuc1FlankedNoncodingUnder10kMinusOnlyMerged.bed"
-plus2_file <- "sox10_Zv9nuc2FlankedNoncodingUnder10kPlusOnlyMerged.bed"
-minus2_file <- "sox10_Zv9nuc2FlankedNoncodingUnder10kMinusOnlyMerged.bed"
-
 read_format <- function(file){
-	strand <- fread(plusfile,data.table=TRUE,fill=TRUE)
+	strand <- fread(file,data.table=TRUE,fill=TRUE)
 	colnames(strand) <- c("seqnames","start","end","strand")
 	return(GRanges(strand))
 }
+plus_file <- "SET_THESE_MergedPlus.bed"
+minus_file <- "YOUR_DATASET_MergedMinus.bed"
 plus <- read_format(plus_file)
 minus <- read_format(minus_file)
-plus2 <- read_format(plus2_file)
-minus2 <- read_format(minus2_file)
 
-overlap_format <- function(plus_strand,minus_strand){
+overlap_format <- function(plus_strand,minus_strand,file,dist=0){
 	merge <- mergeByOverlaps(minus_strand,plus_strand,ignore.strand=TRUE)
 	merged <- data.frame(chr=c(seqnames(merge$plus_strand),seqnames(merge$minus_strand)),
                         start=c(start(merge$plus_strand),start(merge$minus_strand)),
                         end=c(end(merge$plus_strand),end(merge$minus_strand)),
                         ID=1:nrow(merge),
-                        score=0,
+                        score=1:nrow(merge),
                         strand=c(strand(merge$plus_strand),strand(merge$minus_strand)))
-	return(merged)
+        filename <- paste(file,"OverlapsToMerge.bed",sep="")
+	write.table(merged,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+
+    system(sprintf("bedtools sort -i %s > %sOverlapsMergedSorted.bed",filename,file))
+    system(paste("bedtools merge -i ",file,"OverlapsMergedSorted.bed -d ",dist," > ",file,"OverlapsMerged.bed",sep=""))
 }
-nuc1merged <- overlapformat(plus,minus)
-nuc2merged <- overlapformat(plus2,minus2)
-write.table(nuc1merged,file="sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-write.table(nuc2merged,file="sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
- 
-# outside of R merge (get a union) of the bidirectional regions
-bedtools sort -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
-bedtools merge -i sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed
 
-bedtools sort -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMerge.bed > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed
-bedtools merge -i sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsToMergeSorted.bed -d 0 > sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed
+overlap_format(plus,minus,"sox10_871_HiSatUnder10k")
 
-	nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
-	nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
-	colnames(nuc1bidir) <- c("chr","start","end")
-	colnames(nuc2bidir) <- c("chr","start","end")
-
-	nuc1 <- fread("GSM2386488_sox10_nuc_combined.bed")
-	nuc2 <- fread("GSM2386489_sox10_nuc_combined.bed")
-	colnames(nuc1) <- c("chr","start","end","ID","score","strand")
-	colnames(nuc2) <- c("chr","start","end","ID","score","strand")
-	sox10_nuc1 <- GRanges(nuc1)
-	sox10_nuc2 <- GRanges(nuc2)
-	
-	# make sure merge did not add an coding regions
-	overlaps <- findOverlaps(X,coding,ignore.strand=FALSE)
-	hits <- X[-queryHits(overlaps),]
-	#REPEAT 
-
-	feat <- GRanges(seqnames=nuc1bidir$chr,ranges=IRanges(start=nuc1bidir$start,end=nuc1bidir$end))  
-	bidir_read1 <- summarizeOverlaps(features=feat,reads=sox10_nuc1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
-	bidir_read_counts1 <- assay(bidir_read1)
-	nuc1bidir <- cbind(nuc1bidir,bidir_read_counts1)
-	nuc1bidir <- dplyr::mutate(nuc1bidir, size = end-start)
-	write.table(IDasScore,"sox10_Zv9nuc1FlankedWiderBidirRegionsIDisScore.bed",quote=FALSE,row.names=FALSE,col.names=FALSE)
-	
-	feat <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end))  
-	bidir_read1 <- summarizeOverlaps(features=feat,reads=bam1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
-	bidir_read_counts1 <- assay(bidir_read1)
-	intersected1 <- cbind(intersected1,bidir_read_counts1)
-	intersected1 <- dplyr::mutate(intersected1, size = end-start)
-	write.table(intersected1,file="ct711aHets1PrimaryReadsBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 
+# input is two GRanges objects and we are merging the overlapping regions in a strand specific manner
+replicateReprod <- function(rep1,rep2,file,dist=0){
+    repmergedf <- data.frame(chr=c(seqnames(rep1),seqnames(rep2)),
+                        start=c(start(rep1),start(rep2)),
+                        end=c(end(rep1),end(rep2)),
+                        ID=1:(length(rep1)+length(rep2)),
+                        score=1:(length(rep1)+length(rep2)),
+                        strand='+') #just a stand in
+    filename <- paste(file,"AllBidirReg.bed",sep="")
+    write.table(repmergedf,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+    
+    system(sprintf("bedtools sort -i %s > %s_AllBidirRegSorted.bed",filename,file))
+    system(paste("bedtools merge -i ",file,"_AllBidirRegSorted.bed -d ",dist," > ",file,"ReprodOnly.bed",sep=""))
 }
-intersected1 <- fread("ct711a_Homoz1PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
-colnames(intersected1) <- c("chr","start","end","ID","score","strand")
-intersected2 <- fread("ct711a_Homoz2PrimaryNoncodingUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE)
-colnames(intersected2) <- c("chr","start","end","ID","score","strand")
-hetsintersected1 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/ct711a_150804_hets_nuc1PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE) #from jan 2021
-colnames(hetsintersected1) <- c("chr","start","end","ID","score","strand")
-hetsintersected2 <- fread("/panfs/qcb-panasas/engie/GRCz11Star/20_7_21 analyzed/ct711a_150804_hets_nuc2PrimaryUnder10kMergedIntersected.bed",data.table=TRUE,fill=TRUE) #from sept 2020
-colnames(hetsintersected2) <- c("chr","start","end","ID","score","strand")
 
-#unstranded
-feathomo1 <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end),strand=intersected1$strand)  #EDIT LATER ADDED STRAND
-feathomo2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end),strand=intersected2$strand)  
-feathets1 <- GRanges(seqnames=hetsintersected1$chr,ranges=IRanges(start=hetsintersected1$start,end=hetsintersected1$end),strand=hetsintersected1$strand)  
-feathets2 <- GRanges(seqnames=hetsintersected2$chr,ranges=IRanges(start=hetsintersected2$start,end=hetsintersected2$end),strand=hetsintersected2$strand)  
 
-bidir_homo1 <- summarizeOverlaps(features=feathomo1,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
-bidir_homo_counts1 <- assay(bidir_homo1)
-bidir_homo2 <- summarizeOverlaps(features=feathomo2,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
-bidir_homo_counts2 <- assay(bidir_homo2)
-bidir_hets1 <- summarizeOverlaps(features=feathets1,reads=ghets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
-bidir_hets_counts1 <- assay(bidir_hets1)
-bidir_hets2 <- summarizeOverlaps(features=feathets2,reads=ghets2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
-bidir_hets_counts2 <- assay(bidir_hets2)
+readCounts <- function(df,gr){
+	feat <- GRanges(seqnames=df$chr,ranges=IRanges(start=df$start,end=df$end),strand=dr$strand)  
+	reads <- summarizeOverlaps(features=feat,reads=gr,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=TRUE) 
+	read_counts <- assay(reads)
+        return(read_counts)	
+}
 
-#plus strand
-bidir_homo1plus <- summarizeOverlaps(features=feathomo1,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_homo_counts1plus <- assay(bidir_homo1plus)
-bidir_homo2plus <- summarizeOverlaps(features=feathomo2,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_homo_counts2plus <- assay(bidir_homo2plus)
-bidir_hets1plus <- summarizeOverlaps(features=feathets1,reads=ghets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_hets_counts1plus <- assay(bidir_hets1plus)
-bidir_hets2plus <- summarizeOverlaps(features=feathets2,reads=ghets2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_hets_counts2plus <- assay(bidir_hets2plus)
+twoRepCountsStranded <- function(df,rep1,rep2){
+	df$strand='+'
+	oneplus <- readCounts(df,rep1)
+        twoplus <- readCounts(df,rep2)
+	df$strand='-'
+	oneminus <- readCounts(df,rep1)
+        twominus <- readCounts(df,rep2)
+        df <- dplyr::mutate(df,size=end-start)
+        df <- cbind(df,oneplus,oneminus,twoplus,twominus)
+        return(df)
+}
 
-#minus strand
-intersected1$strand <- "-"
-intersected2$strand <- "-"
-hetsintersected1$strand <- "-"
-hetsintersected2$strand <- "-"
-feathomo1 <- GRanges(seqnames=intersected1$chr,ranges=IRanges(start=intersected1$start,end=intersected1$end),strand=intersected1$strand)  
-feathomo2 <- GRanges(seqnames=intersected2$chr,ranges=IRanges(start=intersected2$start,end=intersected2$end),strand=intersected2$strand)  
-feathets1 <- GRanges(seqnames=hetsintersected1$chr,ranges=IRanges(start=hetsintersected1$start,end=hetsintersected1$end),strand=hetsintersected1$strand)  
-feathets2 <- GRanges(seqnames=hetsintersected2$chr,ranges=IRanges(start=hetsintersected2$start,end=hetsintersected2$end),strand=hetsintersected2$strand)  
 
-bidir_homo1minus <- summarizeOverlaps(features=feathomo1,reads=ghomo1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_homo_counts1minus <- assay(bidir_homo1minus)
-bidir_homo2minus <- summarizeOverlaps(features=feathomo2,reads=ghomo2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_homo_counts2minus <- assay(bidir_homo2minus)
-bidir_hets1minus <- summarizeOverlaps(features=feathets1,reads=ghets1,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_hets_counts1minus <- assay(bidir_hets1minus)
-bidir_hets2minus <- summarizeOverlaps(features=feathets2,reads=ghets2,singleEnd=FALSE,fragments=FALSE,inter.feature=FALSE,ignore.strand=FALSE) 
-bidir_hets_counts2minus <- assay(bidir_hets2minus)
+nuc1bidir <- fread("sox10_Zv9nuc1FlankedNoncodingUnder10kOverlapsMerged.bed")
+nuc2bidir <- fread("sox10_Zv9nuc2FlankedNoncodingUnder10kOverlapsMerged.bed")
+colnames(nuc1bidir) <- c("chr","start","end")
+colnames(nuc2bidir) <- c("chr","start","end")
 
-intersected1counts <- cbind(intersected1,bothstrands=bidir_homo_counts1, plus=bidir_homo_counts1plus, minus=bidir_homo_counts1minus)
-intersected1counts <- dplyr::mutate(intersected1counts, size = end-start)
-intersected2counts <- cbind(intersected2,bothstrands=bidir_homo_counts2, plus=bidir_homo_counts2plus, minus=bidir_homo_counts2minus)
-intersected2counts <- dplyr::mutate(intersected2counts, size = end-start)
+nuc1 <- fread("GSM2386488_sox10_nuc_combined.bed")
+nuc2 <- fread("GSM2386489_sox10_nuc_combined.bed")
+colnames(nuc1) <- c("chr","start","end","ID","score","strand")
+colnames(nuc2) <- c("chr","start","end","ID","score","strand")
+sox10_nuc1 <- GRanges(nuc1)
+sox10_nuc2 <- GRanges(nuc2)
+	
+# make sure merge did not add an coding regions
+overlaps <- findOverlaps(X,coding,ignore.strand=FALSE)
+hits <- X[-queryHits(overlaps),]
 
-hetsintersected1counts <- cbind(hetsintersected1,bothstrands=bidir_hets_counts1,plus=bidir_hets_counts1plus, minus=bidir_hets_counts1minus)
-hetsintersected1counts <- dplyr::mutate(hetsintersected1counts, size = end-start)
-hetsintersected2counts <- cbind(hetsintersected2,bothstrands=bidir_hets_counts2, plus=bidir_hets_counts2plus, minus=bidir_hets_counts2minus)
-hetsintersected2counts <- dplyr::mutate(hetsintersected2counts, size = end-start)
-
-## Keep only regions that are reprodicuble over replicates NEED TO ADAPT
-repmerge <- mergeByOverlaps(intersected1,intersected2,ignore.strand=TRUE)
-repmergedf <- data.frame(chr=c(seqnames(repmerge$intersected1),seqnames(repmerge$intersected2)),
-                        start=c(start(repmerge$intersected1),start(repmerge$intersected2)),
-                        end=c(end(repmerge$intersected1),end(repmerge$intersected2)),
-                        ID=c(paste("nuc1",1:length(repmerge),sep=""),paste("nuc2",1:length(repmerge),sep="")),
-                        score=0,
-                        strand=c(strand(repmerge$intersected1),strand(repmerge$intersected2)))
-write.table(repmergedf,file="FlankedWiderNoncodingReprodPreUnion.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-bedtools sort -i FlankedWiderNoncodingReprodPreUnion.bed > FlankedWiderNoncodingReprodPreUnionSorted.bed
-bedtools merge -i FlankedWiderNoncodingReprodPreUnionSorted.bed -d 0 > FlankedWiderNoncodingReprodOnly.bed
-
-# TFBS alignment
-library(BSgenome.Drerio.UCSC.danRer11)
-library(motifmatchr)
-library(TFBSTools) 
-
-# downloaded single batch .txt for JASPAR code PFMs from JASPAR2020, raw JASPAR format
-motifs <- readJASPARMatrix("JASPAR2020CoreTransfac/JASPAR2020_CORE_vertebrates_non-redundant_pfms_jaspar.txt", matrixClass="PFM")
-matchscorecalc <- matchMotifs(motifs,gHomo1,genome="danRer11",out="score") #make sure GRanges object is UCSC seqlevelsStyle
-matches <- motifMatches(matchscorecalc)
-scores <- assay(matchscorecalc)
+intersected1 <- readCounts(intersected1,bam1)
+write.table(intersected1,file="ct711aHets1PrimaryReadsBidirRegions.csv",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t") 

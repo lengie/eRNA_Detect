@@ -27,9 +27,11 @@ sumstat <- function(index){
     print(length(index))}
 
 # function to remove negative values
-nonzero <- function(df){for(i in 1:nrow(df)){
-    if(df$start[i]<1) df$start[i]=1}
-return(df)}
+nonzeroGR <- function(gr){
+    neg <- which(start(gr)<1)
+    start(gr)[neg] <- 1
+return(gr)}
+
 
 #make sure no coding regions were brought back in
 remcoding <- function(gr){
@@ -39,36 +41,18 @@ remcoding <- function(gr){
 }
 
 #make sure that adding flanking regions doesn't go beyond chromosome length
-#(note: need to make this faster than nested for loops)
-chrLimitCheck <- function(df,gen){
-    temp <- c()
-    limit <- getChromInfoFromUCSC(gen)
-    for(i in 1:nrow(df)){
-        for(j in 1:nrow(limit)){
-            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
-                df$end[i]=limit$size[j]  
-               if(df$start[i]>limit$size[j]) temp=c(temp,i)
-            }
-        if(is.null(temp)==FALSE) df <- df[-temp,]
-        }
+chrLimitCheckNoIntGR <- function(gr,limit){
+    keep <- GRanges()
+    for(i in 1:nrow(limit)){
+        tmp <- gr[which(seqnames(gr)==as.character(limit$chrom[i])),]
+        over <- which(end(tmp)>limit$size[i])
+        end(tmp)[over] <- limit$size[i]
+        keep <- c(keep,tmp)
     }
-    return(df)
-} 
-
-#having some null issues on the above
-chrLimitCheck <- function(df,gen){
-    temp <- c()
-    limit <- getChromInfoFromUCSC(gen)
-    for(i in 1:nrow(df)){
-        for(j in 1:nrow(limit)){
-            if(df$chr[i]==limit$chrom[j] & df$end[i]>limit$size[j]){
-                df$end[i]=limit$size[j]  
-            }
-        }
-    }
-    return(df)
-} 
-
+    return(keep)
+}
+limit <- fread("danRer7.chrom.sizes")
+colnames(limit) <- c("chrom","size")
 
 ##
 # loading reproducible bidirectional regions and cluster list
@@ -84,7 +68,8 @@ codes <- fread("Zv9ExonsUTRs500bpFlanking.bed")
 colnames(codes) <- c("chr","start","end","size","strand","ID","score") 
 coding <- GRanges(codes)
 
-spanGap <- function(repl,threshold,gap){
+# this code adds a flanking buffer region to each read and combines the regions that now overlap. so all regions that do not merge with another now have a buffer
+flankSpanGap <- function(repl,threshold,gap){
     # remove reads under threshold size
     rm <- dplyr::filter(repl,size>threshold)
     
@@ -109,6 +94,26 @@ spanGap <- function(repl,threshold,gap){
     return(comb)
 }
 
+#this code does the same, but does not use the internet and starts with the GRanges object
+flankSpanGapGR <- function(repl,gap){ 
+    nearest <- distanceToNearest(repl)
+    list <- which(mcols(nearest)$distance<gap)
+    #remove NA
+    rmNoNA <- repl[queryHits(nearest),]
+    
+    # add flanks to those close to each other
+    adj <- rmNoNA[list,]
+    start(adj) <- start(adj) - gap  #could have these be separate numbers if folks want to have sep parameters
+    end(adj) <- end(adj) + gap
+    #make sure we don't have negative indices
+    adj <- nonzeroGR(adj)
+    adj <- chrLimitCheckNoIntGR(adj,limit)
+    
+    #combine flanked regions into original and make sure there's no coding regions added back in
+    comb <- GenomicRanges::union(adj,grepl)
+    comb <- remcoding(comb)
+    return(comb)
+}
 
 ## should make separate function for cluster overlap comparison       
 # overlap comparison with all clusters and get unique "ground truth" regions that are covered
