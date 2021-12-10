@@ -1,3 +1,10 @@
+###
+###
+###
+###
+###
+
+
 chimpenh <- read_excel("Prescott_S2.xls", sheet = 3)
 humanenh <- read_excel("Prescott_S2.xls", sheet = 2)
 topenh <- read_excel("Prescott_S2.xls", sheet = 1)
@@ -26,8 +33,10 @@ saveOv <- function(bidirfileext,enh){
     bidir <- loadbd3gr(paste(bidirfileext,"_Under10kOverlapsMerged.bed",sep=""))
     ov <- findOverlaps(bidir,enh,ignore.strand=TRUE) #bidir is query, enhancer is subject
     ov_enh <- enh[unique(subjectHits),]
-    print(paste("Number of unique enhancers:",nrow(ov_enh),sep=" "))
+    no_enh <- enh[-unique(subjectHits),]
+    print(paste("Number of unique enhancers:",length(ov_enh),sep=" "))
     gr_save(ov_enh,paste(bidirfileext,"_BidirEnhOv",sep=""))
+    gr_save(no_enh,paste(bidirfileext,"_BidirNoEnh",sep=""))
     return(ov_enh)
 }
 
