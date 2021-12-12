@@ -33,7 +33,7 @@ saveOv <- function(bidirfileext,enh){
     bidir <- loadbd3gr(paste(bidirfileext,"_Under10kOverlapsMerged.bed",sep=""))
     ov <- findOverlaps(bidir,enh,ignore.strand=TRUE) #bidir is query, enhancer is subject
     ov_enh <- enh[unique(subjectHits),]
-    no_enh <- enh[-unique(queryHits),]
+    no_enh <- bidir[-unique(queryHits),]
     print(paste("Number of unique enhancers:",length(ov_enh),sep=" "))
     gr_save(ov_enh,paste(bidirfileext,"_BidirEnhOv",sep=""))
     gr_save(no_enh,paste(bidirfileext,"_BidirNoEnh",sep=""))
