@@ -19,6 +19,7 @@ enh_false_pos <- which(sidebyside[,1] != sidebyside[,2] & sidebyside[,2]==0)
 # location in shuffled all_data
 shuffle_enh_false_neg <- shuffle[enh_false_neg]
 shuffle_enh_false_pos <- shuffle[enh_false_pos]
+samp_enh_fpos <- noise_pool_ind[shuffle_enh_false_pos - train_putenh_no]
 
 # sanity check. All the false negatives should be in first 239626 rows
 min(shuffle_enh_false_neg)
@@ -44,18 +45,20 @@ NOISE <- loadbd(FILENAME)
 # split putenh into composite parts
 splitAndSave <- function(posneg,start,end,putnoise){
   if(posneg=='pos'){
-    whichind <- which(shuffle_enh_false_pos > start && shuffle_enh_false_pos <= end)
-    fp_index <- shuffle_enh_false_pos[whichind]
+    whichind <- which(samp_enh_fpos > start & samp_enh_fpos <= end)
+    fp_index <- samp_enh_fpos[whichind] - start
     falsepn <- putnoise[fp_index]
     print(nrow(falsepn))
-    bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
-  }else{
-    whichind <- which(shuffle_enh_false_neg > start && shuffle_enh_false_neg <= end)
-    fn_index <- shuffle_enh_false_neg[whichind]
+    bedname <- paste(deparse(substitute(putnoise)),"_FalsePos_5layersBinary.bed",sep="")
+  }else if(posneg=='neg'){
+    # putative enhancers are in the first half of all_data and are not shuffled
+    whichind <- which(shuffle_enh_false_neg > start & shuffle_enh_false_neg <= end)
+    fn_index <- shuffle_enh_false_neg[whichind] - start
     falsepn <- putnoise[fn_index]
     print(nrow(falsepn))
-  }
-  bedname <- paste(deparse(substitute(putnoise))),"_5layersBinary.bed",sep="")
+    bedname <- paste(deparse(substitute(putnoise)),"_FalseNeg_5layersBinary.bed",sep="") #NOTE I CHANGED THE FILE NAME BASED ON MODEL
+  }else{print("Please set whether false positive or negative with 'pos' or 'neg'!")}
+  bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
   print(bedname)
   write.table(falsepn,bedname,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 }
