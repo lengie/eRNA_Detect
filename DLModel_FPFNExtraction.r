@@ -58,43 +58,20 @@ samp_enh_fneg <- putenh_pool_ind[shuffle_enh_false_neg]
 samp_enh_fpos <- noise_pool_ind[shuffle_enh_false_pos - train_putenh_no]
 
 
-whichh0n <- which(samp_enh_fneg <= 17137) 
-h0_fn_index <- samp_enh_fneg[whichh0n]
-h0_false_neg <- h0_put[h0_fn_index,]
-write.table(h0_false_neg,"h0_falseneg_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-whichh6 <- which(samp_enh_fneg > 17137 & samp_enh_fneg <= (17137+4429))
-h6_fn_index <- samp_enh_fneg[whichh6]- 17137
-h6_false_neg <- h6_put[h6_fn_index,] 
-write.table(h6_false_neg,"h6_falseneg_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-whichsox1 <- which(samp_enh_fneg > (17137+4429) & samp_enh_fneg <= (17137+4429+82811))
-sox1_fn_index <- samp_enh_fneg[whichsox1]- (17137+4429)
-sox1_false_neg <- sox1_put[sox1_fn_index,] 
-write.table(sox1_false_neg,"sox1_falseneg_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-whichsox2 <- which(samp_enh_fneg > (17137+4429+82811) & samp_enh_fneg <= (17137+4429+82811+135249))
-sox2_fn_index <- samp_enh_fneg[whichsox2]- (17137+4429+82811)
-sox2_false_neg <- sox2_put[sox2_fn_index,] 
-write.table(sox2_false_neg,"sox2_falseneg_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-
-whichh0 <- which(samp_enh_fpos <= 509598)
-h0_fp_index <- samp_enh_fpos[whichh0]
-h0_false_pos <- h0_noise[h0_fp_index,] 
-write.table(h0_false_pos,"h0_falsepos_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-whichh6 <- which(samp_enh_fpos > 509598 & samp_enh_fpos <= (509598+112698))
-h6_fp_index <- samp_enh_fpos[whichh6]  - 509598
-h6_false_pos <- h6_noise[h6_fp_index,] 
-write.table(h6_false_pos,"h6_falsepos_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-whichsox1 <- which(samp_enh_fpos > (509598+112698) & samp_enh_fpos <= (509598+112698))
-sox1_fp_index <- samp_enh_fpos[whichsox1]- - (509598+112698)
-sox1_false_pos <- sox1_noise[sox1_fp_index,] 
-write.table(sox1_false_pos,"sox1_falsepos_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
-
-whichsox2 <- which(samp_enh_fpos > (509598+112698+452236))
-sox2_fp_index <- samp_enh_fpos[whichsox2] - (509598+112698+452236)
-sox2_false_pos <- testsox2_no[sox2_fp_index,] 
-write.table(sox2_false_pos,"sox2_falsepos_ConvDensePoolDenseDense79Acc333.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+splitAndSave <- function(posneg,start,end,putnoise){
+  if(posneg=='pos'){
+    whichind <- which(shuffle_enh_false_pos > start && shuffle_enh_false_pos <= end)
+    fp_index <- shuffle_enh_false_pos[whichind] - start
+    falsepn <- putnoise[fp_index]
+    print(nrow(falsepn))
+    bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
+  }else{
+    whichind <- which(shuffle_enh_false_neg > start && shuffle_enh_false_neg <= end)
+    fn_index <- shuffle_enh_false_neg[whichind] - start
+    falsepn <- putnoise[fn_index]
+    print(nrow(falsepn))
+  }
+  bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
+  print(bedname)
+  write.table(falsepn,bedname,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+}
