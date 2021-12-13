@@ -60,16 +60,17 @@ samp_enh_fpos <- noise_pool_ind[shuffle_enh_false_pos - train_putenh_no]
 
 splitAndSave <- function(posneg,start,end,putnoise){
   if(posneg=='pos'){
-    whichind <- which(samp_enh_fpos > start && samp_enh_fpos <= end)
+    whichind <- which(samp_enh_fpos > start & samp_enh_fpos <= end)
     fp_index <- samp_enh_fpos[whichind] - start
     falsepn <- putnoise[fp_index]
     print(nrow(falsepn))
-    bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
+    bedname <- paste(deparse(substitute(putnoise)),"_FalsePos_5layersBinary.bed",sep="")
   }else if(posneg=='neg'){
-    whichind <- which(shuffle_enh_false_neg > start && shuffle_enh_false_neg <= end)
+    whichind <- which(shuffle_enh_false_neg > start & shuffle_enh_false_neg <= end)
     fn_index <- shuffle_enh_false_neg[whichind] - start
     falsepn <- putnoise[fn_index]
     print(nrow(falsepn))
+    bedname <- paste(deparse(substitute(putnoise)),"_FalseNeg_5layersBinary.bed",sep="")
   }else{print("Please set whether false positive or negative with 'pos' or 'neg'!")}
   bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
   print(bedname)
