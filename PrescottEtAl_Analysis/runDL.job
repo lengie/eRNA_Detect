@@ -7,7 +7,9 @@
 ## runDL.job written by Liana Engie last edited 2021/12/11
 ## run in the folder where your data is and where you want the output files to be created
 
-module load gcc findutils tmux htslib cairo libxml2 bzip2 curl zlib libx11 fontconfig freetype libxt gsl anaconda3 openssl picard samtools intel r/4.0.3
+module load gcc findutils tmux htslib cairo libxml2 bzip2 curl zlib libx11 fontconfig freetype libxt gsl anaconda3 openssl picard samtools intel r/4.0.3 openmpi
 
+eval "$(conda shell.bash hook)"
+conda activate keras
 
 Rscript --vanilla PrescottEtAlTrinhEtAl_DLtest.r
