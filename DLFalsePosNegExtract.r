@@ -48,13 +48,14 @@ splitAndSave <- function(posneg,start,end,putnoise){
     fp_index <- shuffle_enh_false_pos[whichind]
     falsepn <- putnoise[fp_index]
     print(nrow(falsepn))
-    bedname <- paste(as.character(putnoise),"_5layersBinary.bed",sep="")
+    bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
   }else{
     whichind <- which(shuffle_enh_false_neg > start && shuffle_enh_false_neg <= end)
     fn_index <- shuffle_enh_false_neg[whichind]
     falsepn <- putnoise[fn_index]
     print(nrow(falsepn))
   }
-  bedname <- paste(as.character(putnoise),"_5layersBinary.bed",sep="")
+  bedname <- paste(deparse(substitute(putnoise))),"_5layersBinary.bed",sep="")
+  print(bedname)
   write.table(falsepn,bedname,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 }
