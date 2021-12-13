@@ -60,8 +60,8 @@ samp_enh_fpos <- noise_pool_ind[shuffle_enh_false_pos - train_putenh_no]
 
 splitAndSave <- function(posneg,start,end,putnoise){
   if(posneg=='pos'){
-    whichind <- which(shuffle_enh_false_pos > start && shuffle_enh_false_pos <= end)
-    fp_index <- shuffle_enh_false_pos[whichind] - start
+    whichind <- which(samp_enh_fpos > start && samp_enh_fpos <= end)
+    fp_index <- samp_enh_fpos[whichind] - start
     falsepn <- putnoise[fp_index]
     print(nrow(falsepn))
     bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
