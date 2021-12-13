@@ -54,7 +54,7 @@ noise_false_neg <- which(shuffle_enh_false_neg > train_putenh_no)
 
 put_false_pos <- which(shuffle_enh_false_pos <= train_putenh_no)
 noise_false_pos <- which(shuffle_enh_false_pos > train_putenh_no)
-samp_enh_fneg <- putenh_pool_ind[shuffle_enh_false_neg]
+#samp_enh_fneg <- putenh_pool_ind[shuffle_enh_false_neg]
 samp_enh_fpos <- noise_pool_ind[shuffle_enh_false_pos - train_putenh_no]
 
 
