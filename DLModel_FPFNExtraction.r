@@ -65,12 +65,12 @@ splitAndSave <- function(posneg,start,end,putnoise){
     falsepn <- putnoise[fp_index]
     print(nrow(falsepn))
     bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
-  }else{
+  }else if(posneg=='neg'){
     whichind <- which(shuffle_enh_false_neg > start && shuffle_enh_false_neg <= end)
     fn_index <- shuffle_enh_false_neg[whichind] - start
     falsepn <- putnoise[fn_index]
     print(nrow(falsepn))
-  }
+  }else{print("Please set whether false positive or negative with 'pos' or 'neg'!")}
   bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
   print(bedname)
   write.table(falsepn,bedname,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
