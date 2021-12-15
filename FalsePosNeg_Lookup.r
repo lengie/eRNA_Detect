@@ -30,7 +30,7 @@ num_enh_bed <- function(file,enhgr){
 	seqlevelsStyle(gr) <- "ensembl"
 	ov <- findOverlaps(gr,enhgr)
 	print(paste("Number of overlaps: ",length(ov),sep=""))
-        print(paste("Percentage of false positives:,",length(ov)/nrow(bed),sep=" ")
+        print(paste("Percentage of false positives:,",length(ov)/nrow(bed),sep=" "))
 	all <- enhgr[subjectHits(ov),]                         # this is the list of enhancer regions
         filename <- paste(file,"_FANTOMfalsepos.bed",sep="")
 	write.table(all,filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
@@ -60,7 +60,7 @@ num_enh_ensembl <- function(filename,enhgr){
 	print(paste("Number of overlaps: ",length(ov),sep=""))
 	enh <- reg[subjectHits(ov),] %>% dplyr::filter(feature=="enhancer")
         print(paste("Number of enhancers: ",nrow(enh),sep=""))
-        print(paste("Percentage of false positives:,",nrow(enh)/nrow(clean),sep=" ")
+        print(paste("Percentage of false positives:",nrow(enh)/nrow(clean),sep=" "))
 	all <- reg[subjectHits(ov),]
         write.table(all,paste(filename,"_EnsemblFPOverlap.bed",sep=""),quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 	return(all)
