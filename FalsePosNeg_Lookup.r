@@ -24,18 +24,19 @@ loadbd <- function(file){
 }
 bed <- loadbd(YOUR FILE)
 
-num_enh_bed <- function(bed,enhgr){
+num_enh_bed <- function(file,enhgr){
+        bed <- loadbd(paste(file,".bed",sep-""))
 	gr <- GRanges(bed)
 	seqlevelsStyle(gr) <- "ensembl"
 	ov <- findOverlaps(gr,enhgr)
 	print(paste("Number of overlaps: ",length(ov),sep=""))
 	all <- enhgr[subjectHits(ov),]                         # this is the list of enhancer regions
-	return(all)
+        filename <- paste(file,"_FANTOMfalsepos.bed",sep="")
+	write.table(bed_FANTOM,filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+        return(all)
 }
 
 bed_FANTOM <- num_enh_bed(bed,fantomgr)
-
-write.table(bed_FANTOM,YOUR FILE,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 
 ## ENSEMBL
 regmm <- fread("mus_musculus.GRCm39.Regulatory_Build.regulatory_features.20201021.gff")
@@ -48,8 +49,8 @@ colnames(reghg) <- c("chr","build","feature","start","end","V6","V7","V8","comme
 enhgrh <- GRanges(reghg)
 seqlevelsStyle(enhgrh) <- "ensembl" 
 
-num_enh <- function(filename){
-	report <- fread(filename)
+num_enh_ensembl <- function(filename){
+	report <- fread(paste(filename,".bed",sep=""))
 	clean <- report[,c(5,13,14)]
 	colnames(clean) <- c("chr","start","end")
 	gr <- GRanges(clean)
@@ -59,8 +60,8 @@ num_enh <- function(filename){
 	enh <- reg[subjectHits(ov),] %>% dplyr::filter(feature=="enhancer")
         print(paste("Number of enhancers: ",nrow(enh),sep=""))
 	all <- reg[subjectHits(ov),]
+        write.table(all,paste(filename,"_EnsemblFPOverlap.bed",sep=""),quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 	return(all)
 }
 
-h0_fn <- num_enh("report_h0_falseneg_12layersBinaryBed3.bed")
-write.table(h0_fn,"h0_falseneg_12layersBinary_EnsemblRegOverlap.bed",quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+h0_fn <- num_enh("report_h0_falseneg_12layersBinaryBed3")
