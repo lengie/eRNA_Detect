@@ -11,6 +11,11 @@ colnames(fantom) <- c("chr","start","end","region","ID","strand","initiationPlus
 fantomgr <- GRanges(fantom)
 seqlevelsStyle(fantomgr) <- "ensembl"
 
+fantomhg <- fread("human_permissive_enhancers_phase_1_and_2.bed")
+colnames(fantomhg) <- c("chr","start","end","region","ID","strand","initiationPlus","initiationMinus","thickStart","thickEnd","poolExpPlus","poolExpMinus") #I'm guessing on these a bit based on the readme but I don't need the later columns anyway
+fantomgr <- GRanges(fantomhg)
+seqlevelsStyle(fantomgrh) <- "ensembl"
+
 # load the original bed files
 loadbd <- function(file){
     bd <- fread(file)
@@ -33,10 +38,15 @@ bed_FANTOM <- num_enh_bed(bed,fantomgr)
 write.table(bed_FANTOM,YOUR FILE,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 
 ## ENSEMBL
-reg <- fread("mus_musculus.GRCm39.Regulatory_Build.regulatory_features.20201021.gff")
-colnames(reg) <- c("chr","build","feature","start","end","V6","V7","V8","comments")
-enhgr <- GRanges(reg)
+regmm <- fread("mus_musculus.GRCm39.Regulatory_Build.regulatory_features.20201021.gff")
+colnames(regmm) <- c("chr","build","feature","start","end","V6","V7","V8","comments")
+enhgr <- GRanges(regmm)
 seqlevelsStyle(enhgr) <- "ensembl" # I got this dataset from ensembl, but just making sure
+
+reghg <- fread("")
+colnames(reghg) <- c("chr","build","feature","start","end","V6","V7","V8","comments")
+enhgrh <- GRanges(reghg)
+seqlevelsStyle(enhgrh) <- "ensembl" 
 
 num_enh <- function(filename){
 	report <- fread(filename)
