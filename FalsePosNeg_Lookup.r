@@ -25,17 +25,18 @@ loadbd <- function(file){
 bed <- loadbd(YOUR FILE)
 
 num_enh_bed <- function(file,enhgr){
-        bed <- loadbd(paste(file,".bed",sep-""))
+        bed <- loadbd(paste(file,".bed",sep=""))
 	gr <- GRanges(bed)
 	seqlevelsStyle(gr) <- "ensembl"
 	ov <- findOverlaps(gr,enhgr)
 	print(paste("Number of overlaps: ",length(ov),sep=""))
+        print(paste("Percentage of false positives:,",length(ov)/nrow(bed),sep=" ")
 	all <- enhgr[subjectHits(ov),]                         # this is the list of enhancer regions
         filename <- paste(file,"_FANTOMfalsepos.bed",sep="")
-	write.table(bed_FANTOM,filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
+	write.table(all,filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
         return(all)
 }
-
+	      
 bed_FANTOM <- num_enh_bed(bed,fantomgr)
 
 ## ENSEMBL
@@ -49,7 +50,7 @@ colnames(reghg) <- c("chr","build","feature","start","end","V6","V7","V8","comme
 enhgrh <- GRanges(reghg)
 seqlevelsStyle(enhgrh) <- "ensembl" 
 
-num_enh_ensembl <- function(filename){
+num_enh_ensembl <- function(filename,enhgr){
 	report <- fread(paste(filename,".bed",sep=""))
 	clean <- report[,c(5,13,14)]
 	colnames(clean) <- c("chr","start","end")
@@ -59,9 +60,10 @@ num_enh_ensembl <- function(filename){
 	print(paste("Number of overlaps: ",length(ov),sep=""))
 	enh <- reg[subjectHits(ov),] %>% dplyr::filter(feature=="enhancer")
         print(paste("Number of enhancers: ",nrow(enh),sep=""))
+        print(paste("Percentage of false positives:,",nrow(enh)/nrow(clean),sep=" ")
 	all <- reg[subjectHits(ov),]
         write.table(all,paste(filename,"_EnsemblFPOverlap.bed",sep=""),quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 	return(all)
 }
-
+	      
 h0_fn <- num_enh("report_h0_falseneg_12layersBinaryBed3")
