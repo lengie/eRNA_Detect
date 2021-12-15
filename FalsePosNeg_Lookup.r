@@ -43,7 +43,7 @@ colnames(regmm) <- c("chr","build","feature","start","end","V6","V7","V8","comme
 enhgr <- GRanges(regmm)
 seqlevelsStyle(enhgr) <- "ensembl" # I got this dataset from ensembl, but just making sure
 
-reghg <- fread("")
+reghg <- fread("homo_sapiens.GRCh37.Regulatory_Build.regulatory_features.20201218.gff")
 colnames(reghg) <- c("chr","build","feature","start","end","V6","V7","V8","comments")
 enhgrh <- GRanges(reghg)
 seqlevelsStyle(enhgrh) <- "ensembl" 
