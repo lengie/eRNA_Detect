@@ -13,7 +13,7 @@ seqlevelsStyle(fantomgr) <- "ensembl"
 
 fantomhg <- fread("human_permissive_enhancers_phase_1_and_2.bed")
 colnames(fantomhg) <- c("chr","start","end","region","ID","strand","initiationPlus","initiationMinus","thickStart","thickEnd","poolExpPlus","poolExpMinus") #I'm guessing on these a bit based on the readme but I don't need the later columns anyway
-fantomgr <- GRanges(fantomhg)
+fantomgrh <- GRanges(fantomhg)
 seqlevelsStyle(fantomgrh) <- "ensembl"
 
 # load the original bed files
@@ -39,8 +39,24 @@ num_enh_bed <- function(file,enhgr){
 	      
 bed_FANTOM <- num_enh_bed(bed,fantomgr)
 
+human1_1_fp <- num_enh_bed("human1_1_noEnh_5layersBinary",fantomgrh)
+human1_2_fp <- num_enh_bed("human1_2_noEnh_5layersBinary",fantomgrh)
+human2_1_fp <- num_enh_bed("human2_1_noEnh_5layersBinary",fantomgrh)
+human2_2_fp <- num_enh_bed("human2_2_noEnh_5layersBinary",fantomgrh)
+human3_1_fp <- num_enh_bed("human3_1_noEnh_5layersBinary",fantomgrh)
+human3_2_fp <- num_enh_bed("human3_2_noEnh_5layersBinary",fantomgrh)
+
+human1_1_fp <- num_enh_bed("human1_1_noEnh_12layersBinary",fantomgrh)
+human1_2_fp <- num_enh_bed("human1_2_noEnh_12layersBinary",fantomgrh)
+human2_1_fp <- num_enh_bed("human2_1_noEnh_12layersBinary",fantomgrh)
+human2_2_fp <- num_enh_bed("human2_2_noEnh_12layersBinary",fantomgrh)
+human3_1_fp <- num_enh_bed("human3_1_noEnh_12layersBinary",fantomgrh)
+human3_2_fp <- num_enh_bed("human3_2_noEnh_12layersBinary",fantomgrh)
+
+
 ## ENSEMBL
-regmm <- fread("mus_musculus.GRCm39.Regulatory_Build.regulatory_features.20201021.gff")
+regmm <- fread("mus_musculus.GRCm39.Regulatory_Build.regulatory_features.20201021.gff") #check your genome build
+# OR regmm <- fread("Kim2010/mus_musculus.GRCm38.Regulatory_Build.regulatory_features.20180516.gff")
 colnames(regmm) <- c("chr","build","feature","start","end","V6","V7","V8","comments")
 enhgr <- GRanges(regmm)
 seqlevelsStyle(enhgr) <- "ensembl" # I got this dataset from ensembl, but just making sure
@@ -67,3 +83,17 @@ num_enh_ensembl <- function(filename,enhgr){
 }
 	      
 h0_fn <- num_enh("report_h0_falseneg_12layersBinaryBed3")
+
+human1_1_fp <- num_enh_bed("human1_1_noEnh_5layersBinary",enhgrh)
+human1_2_fp <- num_enh_bed("human1_2_noEnh_5layersBinary",enhgrh)
+human2_1_fp <- num_enh_bed("human2_1_noEnh_5layersBinary",enhgrh)
+human2_2_fp <- num_enh_bed("human2_2_noEnh_5layersBinary",enhgrh)
+human3_1_fp <- num_enh_bed("human3_1_noEnh_5layersBinary",enhgrh)
+human3_2_fp <- num_enh_bed("human3_2_noEnh_5layersBinary",enhgrh)
+
+human1_1_fp <- num_enh_bed("human1_1_noEnh_12layersBinary",enhgrh)
+human1_2_fp <- num_enh_bed("human1_2_noEnh_12layersBinary",enhgrh)
+human2_1_fp <- num_enh_bed("human2_1_noEnh_12layersBinary",enhgrh)
+human2_2_fp <- num_enh_bed("human2_2_noEnh_12layersBinary",enhgrh)
+human3_1_fp <- num_enh_bed("human3_1_noEnh_12layersBinary",enhgrh)
+human3_2_fp <- num_enh_bed("human3_2_noEnh_12layersBinary",enhgrh)
