@@ -156,7 +156,7 @@ splitAndSave <- function(posneg,start,end,putnoise){
     print(nrow(falsepn))
     bedname <- paste(deparse(substitute(putnoise)),"_FalseNeg_5layersBinary.bed",sep="") #NOTE I CHANGED THE FILE NAME BASED ON MODEL
   }else{print("Please set whether false positive or negative with 'pos' or 'neg'!")}
-  bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
+  #bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
   print(bedname)
   write.table(falsepn,bedname,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 }
