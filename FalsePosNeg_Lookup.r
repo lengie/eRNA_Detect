@@ -66,6 +66,7 @@ colnames(reghg) <- c("chr","build","feature","start","end","V6","V7","V8","comme
 enhgrh <- GRanges(reghg)
 seqlevelsStyle(enhgrh) <- "ensembl" 
 
+# for mouse genome builds that were ported to most recent genome build
 num_enh_ensembl <- function(filename,enhgr){
 	report <- fread(paste(filename,".bed",sep=""))
 	clean <- report[,c(5,13,14)]
