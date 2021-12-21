@@ -141,22 +141,20 @@ NOISE <- loadbd(FILENAME)
 
 ## so we have their locations in all_data. We need to split putenh and all_noise
 # split putenh into composite parts
-splitAndSave <- function(posneg,start,end,putnoise){
+splitAndSave <- function(posneg,start,end,putnoise,suffix){
   if(posneg=='pos'){
     whichind <- which(samp_enh_fpos > start & samp_enh_fpos <= end)
     fp_index <- samp_enh_fpos[whichind] - start
     falsepn <- putnoise[fp_index]
     print(nrow(falsepn))
-    bedname <- paste(deparse(substitute(putnoise)),"_FalsePos_5layersBinary.bed",sep="")
   }else if(posneg=='neg'){
     # putative enhancers are in the first half of all_data and are not shuffled
     whichind <- which(shuffle_enh_false_neg > start & shuffle_enh_false_neg <= end)
     fn_index <- shuffle_enh_false_neg[whichind] - start
     falsepn <- putnoise[fn_index]
     print(nrow(falsepn))
-    bedname <- paste(deparse(substitute(putnoise)),"_FalseNeg_5layersBinary.bed",sep="") #NOTE I CHANGED THE FILE NAME BASED ON MODEL
   }else{print("Please set whether false positive or negative with 'pos' or 'neg'!")}
-  #bedname <- paste(deparse(substitute(putnoise)),"_5layersBinary.bed",sep="")
+  bedname <- paste(deparse(substitute(putnoise)),suffix,sep="")
   print(bedname)
   write.table(falsepn,bedname,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
 }
