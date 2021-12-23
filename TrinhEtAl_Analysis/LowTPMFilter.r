@@ -42,17 +42,26 @@ h3_1no <- fread("Prescott2015/human_3_1_BidirNoEnh_3kb_50bp.tabular",header=FALS
 h3_2no <- fread("Prescott2015/human_3_2_BidirNoEnh_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)
 
 # I want every single row to be a new point
-plus <- sapply(1:nrow(c1_1tab), function(x){average(c1_1tab[x,1;120])}
-minus <- sapply(1:nrow(c1_1tab), function(x){average(c1_1tab[x,121;240])}
+plus <- sapply(1:nrow(c1_1tab), function(x){mean(as.matrix(c1_1tab[x,1:60]))})
+minus <- sapply(1:nrow(c1_1tab), function(x){mean(as.matrix(c1_1tab[x,61:120]))})
 
-plot <- data.frame(plus=plus,
-                   minus=minus
-                   species='chimp')
+  toplot <- data.frame(plus=plus,
+                     minus=minus
+                     species='chimp')
 
 addRepPlot <- function(tab,species){
-    
-    new <- cbind(plot,
+    plus <- sapply(1:nrow(tab), function(x){mean(as.matrix(tab[x,1:60]))})
+    minus <- sapply(1:nrow(tab), function(x){mean(as.matrix(tab[x,61:120]))})
+    new <- cbind(plot, data.frame(plus=plus,minus=minus,species=species))      #plot could be an input to this function, as well, if you wanted to control building various plots
     return(new)
 }
 
-plot <- addRepPlot(,'human')
+toplot <- addRepPlot(,'human')
+                 
+                 
+png("PrescottTrinh_TPMByStrandBySpecies",width=1200,height=1080)
+    ggplot(toplot, aes(x=minus, y=plus,color=species)) +
+      geom_point(size=0.25) + xlab("plus") + ylab("minus") +
+      ggtitle("Prescott et al Trinh et al avg TPM by strand by species") +
+      scale_x_continuous(trans="log10") + scale_y_continuous(trans="log10")
+dev.off() 
