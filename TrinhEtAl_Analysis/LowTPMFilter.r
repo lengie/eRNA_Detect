@@ -3,7 +3,7 @@
 ###
 ### Purpose: Compare average TPM across region of plus strand or minus strand of three different species' replicates
 ### Input: Tabular files with TPM binned 50bp across 3kb span, plus then minus strand of a single region represented per row
-### Output: Scatter plot with average TPM, plus strand y-axis minus strand x-axis, every enhancer region a separate dot, colors by species
+### Output: Scatter plot with average TPM, plus strand x-axis minus strand y-axis, every enhancer region a separate dot, colors by species
 
 library(GenomicRanges)
 library(GenomicFeatures)
@@ -28,6 +28,7 @@ h3_1tab <- fread("Prescott2015/human_3_1_enh_overlaps_3kb_50bp.tabular",header=F
 h3_2tab <- fread("Prescott2015/human_3_2_enh_overlaps_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)
 sox1_enh <- fread("DLTesting/sox10_871_bidirATACnoribo_pt1rpb_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)
 sox2_enh <- fread("DLTesting/sox10_873_bidirATACnoribo_pt1rpb_3kb_50bpTEST.tabular",header=FALSE) %>% replace(is.na(.), 0)
+
 sox1_no <- fread("DLTesting/sox10_871_bidirUnder500bpMerged800bpNoATACOverlap.tabular",header=FALSE) %>% replace(is.na(.), 0)
 sox2_no <- fread("DLTesting/sox10_873_bidirUnder500bpMerged800bpNoATACOverlap.tabular",header=FALSE) %>% replace(is.na(.), 0)
 c1_1no <- fread("Prescott2015/chimp_1_1_BidirNoEnh_3kb_50bp.tabular",header=FALSE) %>% replace(is.na(.), 0)
@@ -45,18 +46,29 @@ h3_2no <- fread("Prescott2015/human_3_2_BidirNoEnh_3kb_50bp.tabular",header=FALS
 plus <- sapply(1:nrow(c1_1tab), function(x){mean(as.matrix(c1_1tab[x,1:60]))})
 minus <- sapply(1:nrow(c1_1tab), function(x){mean(as.matrix(c1_1tab[x,61:120]))})
 
-  toplot <- data.frame(plus=plus,
-                     minus=minus
+toplot <- data.frame(plus=plus,
+                     minus=minus,
                      species='chimp')
 
-addRepPlot <- function(tab,species){
-    plus <- sapply(1:nrow(tab), function(x){mean(as.matrix(tab[x,1:60]))})
-    minus <- sapply(1:nrow(tab), function(x){mean(as.matrix(tab[x,61:120]))})
-    new <- cbind(plot, data.frame(plus=plus,minus=minus,species=species))      #plot could be an input to this function, as well, if you wanted to control building various plots
+addRepPlot <- function(tab,sp,plotdf=toplot){
+    plusn <- sapply(1:nrow(tab), function(x){mean(as.matrix(tab[x,1:60]))})
+    minusn <- sapply(1:nrow(tab), function(x){mean(as.matrix(tab[x,61:120]))})
+    new <- rbind(plotdf, data.frame(plus=plusn,minus=minusn,species=sp))  
     return(new)
 }
 
-toplot <- addRepPlot(,'human')
+toplot <- addRepPlot(c1_2tab,'chimp',toplot)
+toplot <- addRepPlot(c2_1tab,'chimp',toplot)
+toplot <- addRepPlot(c2_2tab,'chimp',toplot)
+toplot <- addRepPlot(h1_1tab,'human',toplot)
+toplot <- addRepPlot(h1_2tab,'human',toplot)
+toplot <- addRepPlot(h2_1tab,'human',toplot)
+toplot <- addRepPlot(h2_2tab,'human',toplot)
+toplot <- addRepPlot(h3_1tab,'human',toplot)
+toplot <- addRepPlot(h3_2tab,'human',toplot)
+toplot <- addRepPlot(sox1_enh,'zebrafish',toplot)
+toplot <- addRepPlot(sox2_enh,'zebrafish',toplot)
+
                  
                  
 png("PrescottTrinh_TPMByStrandBySpecies",width=1200,height=1080)
